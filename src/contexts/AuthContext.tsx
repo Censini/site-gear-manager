@@ -44,11 +44,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (error) throw error;
     } catch (error) {
+      console.error('GitHub sign in error:', error);
       toast({
-        title: "Login Failed",
-        description: error instanceof Error ? error.message : "An error occurred during login",
+        title: "Échec de connexion",
+        description: error instanceof Error ? error.message : "Une erreur s'est produite pendant la connexion",
         variant: "destructive",
       });
+      throw error; // Re-throw to allow handling in the Auth component
     }
   };
 
@@ -58,8 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
     } catch (error) {
       toast({
-        title: "Logout Failed",
-        description: error instanceof Error ? error.message : "An error occurred during logout",
+        title: "Échec de déconnexion",
+        description: error instanceof Error ? error.message : "Une erreur s'est produite pendant la déconnexion",
         variant: "destructive",
       });
     }
