@@ -51,6 +51,11 @@ const Auth = () => {
                     Le fournisseur GitHub n'est pas activé. Veuillez configurer l'authentification GitHub dans les paramètres de votre projet Supabase.
                   </p>
                 )}
+                {error.includes("error parsing redirect") && (
+                  <p className="text-sm mt-2">
+                    Erreur de redirection. Veuillez vérifier que l'URL de redirection dans Supabase inclut bien l'URL de cette application.
+                  </p>
+                )}
               </div>
             </div>
           )}
