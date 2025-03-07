@@ -9,7 +9,204 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      equipment: {
+        Row: {
+          created_at: string | null
+          firmware: string | null
+          id: string
+          install_date: string | null
+          ip_address: string | null
+          mac_address: string | null
+          manufacturer: string
+          model: string
+          name: string
+          netbios: string | null
+          site_id: string | null
+          status: string
+          type: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          firmware?: string | null
+          id?: string
+          install_date?: string | null
+          ip_address?: string | null
+          mac_address?: string | null
+          manufacturer: string
+          model: string
+          name: string
+          netbios?: string | null
+          site_id?: string | null
+          status: string
+          type: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          firmware?: string | null
+          id?: string
+          install_date?: string | null
+          ip_address?: string | null
+          mac_address?: string | null
+          manufacturer?: string
+          model?: string
+          name?: string
+          netbios?: string | null
+          site_id?: string | null
+          status?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ip_ranges: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          dhcp_scope: boolean | null
+          id: string
+          is_reserved: boolean | null
+          range: string
+          site_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          dhcp_scope?: boolean | null
+          id?: string
+          is_reserved?: boolean | null
+          range: string
+          site_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          dhcp_scope?: boolean | null
+          id?: string
+          is_reserved?: boolean | null
+          range?: string
+          site_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ip_ranges_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      network_connections: {
+        Row: {
+          bandwidth: string | null
+          contract_ref: string | null
+          created_at: string | null
+          id: string
+          provider: string
+          site_id: string | null
+          sla: string | null
+          status: string
+          type: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          bandwidth?: string | null
+          contract_ref?: string | null
+          created_at?: string | null
+          id?: string
+          provider: string
+          site_id?: string | null
+          sla?: string | null
+          status: string
+          type: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          bandwidth?: string | null
+          contract_ref?: string | null
+          created_at?: string | null
+          id?: string
+          provider?: string
+          site_id?: string | null
+          sla?: string | null
+          status?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "network_connections_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sites: {
+        Row: {
+          address: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          country: string
+          created_at: string | null
+          id: string
+          location: string
+          name: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country: string
+          created_at?: string | null
+          id?: string
+          location: string
+          name: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country?: string
+          created_at?: string | null
+          id?: string
+          location?: string
+          name?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
