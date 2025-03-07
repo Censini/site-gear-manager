@@ -4,8 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import EquipmentTable from "@/components/equipment/EquipmentTable";
 import { Loader2 } from "lucide-react";
+import { Equipment } from "@/types/types";
 
-const Equipment = () => {
+const EquipmentPage = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const { data: equipmentList, error, isLoading: isQueryLoading } = useQuery({
@@ -16,7 +17,22 @@ const Equipment = () => {
         .select("*");
       
       if (error) throw error;
-      return data || [];
+      
+      // Transform snake_case database fields to camelCase for our frontend types
+      return (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        siteId: item.site_id,
+        type: item.type,
+        model: item.model,
+        manufacturer: item.manufacturer,
+        ipAddress: item.ip_address,
+        macAddress: item.mac_address,
+        firmware: item.firmware,
+        installDate: item.install_date,
+        status: item.status,
+        netbios: item.netbios
+      })) as Equipment[];
     }
   });
 
@@ -47,4 +63,4 @@ const Equipment = () => {
   );
 };
 
-export default Equipment;
+export default EquipmentPage;
