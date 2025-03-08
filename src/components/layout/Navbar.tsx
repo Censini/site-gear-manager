@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Sidebar from "./Sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { toast } from "sonner";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -27,7 +28,9 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
   const { theme, setTheme } = useTheme();
 
   const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    toast.success(`Mode ${newTheme === "dark" ? "sombre" : "clair"} activé`);
   };
 
   // Handle mobile menu click
@@ -40,7 +43,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-card dark:bg-card shadow-md">
+    <header className="sticky top-0 z-50 w-full flex items-center justify-between px-6 py-4 bg-card shadow-md">
       <div className="flex items-center">
         {isMobile && (
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -65,7 +68,13 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
         </div>
       </div>
       <div className="flex items-center space-x-2">
-        <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={toggleTheme} 
+          className="rounded-full"
+          aria-label={theme === "dark" ? "Activer le mode clair" : "Activer le mode sombre"}
+        >
           {theme === "dark" ? (
             <SunIcon className="h-5 w-5" />
           ) : (
@@ -85,12 +94,12 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
-              {session?.user?.email || 'My Account'}
+              {session?.user?.email || 'Mon compte'}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={signOut} className="cursor-pointer">
               <LogOut className="h-4 w-4 mr-2" />
-              <span>Log out</span>
+              <span>Déconnexion</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

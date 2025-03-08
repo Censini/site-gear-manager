@@ -14,7 +14,8 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [theme, setTheme] = useState<Theme>(() => {
     // Check if theme is stored in localStorage
     const storedTheme = localStorage.getItem("theme") as Theme;
-    return storedTheme || "light";
+    // Default to dark if no theme is stored
+    return storedTheme || "dark";
   });
 
   useEffect(() => {
@@ -26,7 +27,9 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     
     if (theme === "dark") {
       root.classList.add("dark");
+      root.classList.remove("light");
     } else {
+      root.classList.add("light");
       root.classList.remove("dark");
     }
   }, [theme]);

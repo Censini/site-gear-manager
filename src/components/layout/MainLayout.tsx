@@ -48,9 +48,9 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   };
   
   return (
-    <div className={`min-h-screen ${theme === "dark" ? "dark" : ""}`}>
+    <div className={`min-h-screen w-full ${theme === "dark" ? "dark" : "light"}`}>
       <Navbar onMenuClick={handleMenuClick} />
-      <div className="flex relative">
+      <div className="flex relative h-[calc(100vh-4rem)]">
         {/* Desktop Sidebar */}
         <div
           id="sidebar" 
@@ -81,7 +81,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
                 setSidebarCollapsed(!sidebarCollapsed);
               }
             }}
-            className="bg-primary hover:bg-primary/90 text-black rounded-full shadow-md size-10"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-md size-10"
           >
             {isMobile ? (
               <Menu className="h-5 w-5" />
@@ -96,9 +96,9 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         {/* Main Content */}
         <main 
           className={cn(
-            "flex-1 transition-all duration-300 ease-in-out p-6 md:p-8 bg-background",
-            sidebarCollapsed ? "ml-0" : "",
-            "mt-16 md:mt-0"
+            "flex-1 transition-all duration-300 ease-in-out p-6 md:p-8 bg-background overflow-y-auto",
+            sidebarCollapsed ? "ml-0 w-full" : "md:ml-0",
+            "mt-0 md:mt-0 max-w-full"
           )}
         >
           {children}
