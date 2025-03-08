@@ -48,14 +48,14 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   };
   
   return (
-    <div className={`min-h-screen w-full ${theme === "dark" ? "dark" : "light"}`}>
+    <div className={`min-h-screen w-full flex flex-col ${theme === "dark" ? "dark" : "light"}`}>
       <Navbar onMenuClick={handleMenuClick} />
-      <div className="flex relative h-[calc(100vh-4rem)]">
+      <div className="flex relative h-[calc(100vh-4rem)] overflow-hidden">
         {/* Desktop Sidebar */}
         <div
           id="sidebar" 
           className={cn(
-            "transition-all duration-300 ease-in-out fixed md:relative top-16 md:top-0 left-0 z-40 h-[calc(100vh-4rem)] bg-sidebar w-64",
+            "transition-all duration-300 ease-in-out fixed md:relative top-16 md:top-0 left-0 z-40 h-[calc(100vh-4rem)] bg-sidebar w-64 flex-shrink-0",
             sidebarCollapsed ? "md:-ml-64" : "",
             isMobile ? (mobileSidebarOpen ? "translate-x-0" : "-translate-x-full") : ""
           )}
@@ -66,7 +66,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         {/* Sidebar Toggle Button */}
         <div 
           className={cn(
-            "fixed md:absolute top-24 z-50 transition-all duration-300 ease-in-out",
+            "fixed md:absolute top-20 z-50 transition-all duration-300 ease-in-out",
             sidebarCollapsed ? "left-5" : "left-64"
           )}
         >
@@ -81,7 +81,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
                 setSidebarCollapsed(!sidebarCollapsed);
               }
             }}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-md size-10"
+            className="bg-primary hover:bg-primary/80 text-primary-foreground rounded-full shadow-md size-10"
           >
             {isMobile ? (
               <Menu className="h-5 w-5" />
@@ -96,12 +96,13 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         {/* Main Content */}
         <main 
           className={cn(
-            "flex-1 transition-all duration-300 ease-in-out p-6 md:p-8 bg-background overflow-y-auto",
-            sidebarCollapsed ? "ml-0 w-full" : "md:ml-0",
-            "mt-0 md:mt-0 max-w-full"
+            "flex-1 transition-all duration-300 ease-in-out p-6 md:py-8 md:px-12 bg-background overflow-y-auto",
+            sidebarCollapsed ? "ml-0 w-full" : "md:ml-0"
           )}
         >
-          {children}
+          <div className="max-w-6xl mx-auto">
+            {children}
+          </div>
         </main>
       </div>
     </div>

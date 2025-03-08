@@ -132,11 +132,11 @@ const Dashboard = () => {
   
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+      <h1 className="dashboard-title">Tableau de bord</h1>
       
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="dashboard-stats">
         <StatsCard
-          title="Total Equipment"
+          title="Total Équipement"
           value={stats.totalEquipment}
           icon={<Server className="h-6 w-6 text-primary" />}
         />
@@ -146,34 +146,34 @@ const Dashboard = () => {
           icon={<Building className="h-6 w-6 text-primary" />}
         />
         <StatsCard
-          title="Active Equipment"
+          title="Équipement Actif"
           value={stats.equipmentByStatus.active}
           icon={<Network className="h-6 w-6 text-primary" />}
         />
         <StatsCard
-          title="Sites with Issues"
+          title="Sites avec Problèmes"
           value={stats.sitesWithIssues}
           icon={<AlertTriangle className="h-6 w-6 text-primary" />}
         />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="dashboard-charts">
         <StatusChart stats={stats} />
         <TypeChart stats={stats} />
       </div>
 
-      <Card>
+      <Card className="dashboard-table">
         <CardHeader>
-          <CardTitle>Equipment with Issues</CardTitle>
+          <CardTitle>Équipement avec Problèmes</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>IP Address</TableHead>
+                <TableHead>Nom</TableHead>
+                <TableHead>Adresse IP</TableHead>
                 <TableHead>Site</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Statut</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -183,7 +183,7 @@ const Dashboard = () => {
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell>{item.ip_address}</TableCell>
                     <TableCell>
-                      {sites.find((site) => site.id === item.site_id)?.name || "Unassigned"}
+                      {sites.find((site) => site.id === item.site_id)?.name || "Non assigné"}
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={item.status} />
@@ -193,7 +193,7 @@ const Dashboard = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={4} className="h-24 text-center">
-                    No equipment with issues found.
+                    Aucun équipement avec problèmes trouvé.
                   </TableCell>
                 </TableRow>
               )}

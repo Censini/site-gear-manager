@@ -35,7 +35,7 @@ const TypeChart = ({ stats }: TypeChartProps) => {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[180px]">
+        <div className="h-[200px] flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}

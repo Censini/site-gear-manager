@@ -11,8 +11,8 @@ const COLORS = ["#00D2C6", "#7557FF", "#FF7066", "#94a3b8"];
 const STATUS_NAMES = {
   active: "Active",
   maintenance: "Maintenance",
-  failure: "Failure",
-  unknown: "Unknown"
+  failure: "Échec",
+  unknown: "Inconnu"
 };
 
 const StatusChart = ({ stats }: StatusChartProps) => {
@@ -58,7 +58,7 @@ const StatusChart = ({ stats }: StatusChartProps) => {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[180px]">
+        <div className="h-[200px] flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie

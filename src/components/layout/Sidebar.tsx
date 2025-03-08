@@ -28,39 +28,32 @@ const Sidebar = () => {
   const location = useLocation();
 
   return (
-    <aside className="h-full flex flex-col justify-between py-6 bg-sidebar">
-      <div>
-        {/* Logo ou titre */}
-        <div className="px-5 mb-10">
-          <h2 className="text-xl font-semibold text-sidebar-foreground">
-            Inventaire Réseau
-          </h2>
-        </div>
-        
-        {/* Navigation */}
-        <nav className="space-y-1 px-3">
-          {sidebarItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all hover:bg-accent/20",
-                location.pathname === item.path
-                  ? "bg-primary/10 text-primary"
-                  : "text-sidebar-foreground hover:text-primary"
-              )}
-            >
-              <item.icon className={cn(
-                "h-5 w-5 mr-3",
-                location.pathname === item.path
-                  ? "text-primary"
-                  : ""
-              )} />
-              <span>{item.name}</span>
-            </Link>
-          ))}
-        </nav>
+    <aside className="h-full flex flex-col justify-between py-4 bg-sidebar w-full">
+      {/* Logo ou titre */}
+      <div className="px-5 mb-8">
+        <h2 className="text-xl font-semibold text-sidebar-foreground">
+          Inventaire Réseau
+        </h2>
       </div>
+      
+      {/* Navigation */}
+      <nav className="space-y-1 px-3 flex-1">
+        {sidebarItems.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={cn(
+              "flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all",
+              location.pathname === item.path
+                ? "bg-primary text-primary-foreground"
+                : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+            )}
+          >
+            <item.icon className="h-5 w-5 mr-3" />
+            <span>{item.name}</span>
+          </Link>
+        ))}
+      </nav>
       
       {/* Profil utilisateur en bas */}
       <div className="px-4 py-4 mt-auto border-t border-sidebar-border/20">

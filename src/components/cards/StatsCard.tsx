@@ -16,22 +16,22 @@ interface StatsCardProps {
 
 const StatsCard = ({ title, value, icon, className, subtitle, trend }: StatsCardProps) => {
   return (
-    <Card className={cn("stat-card overflow-hidden transition-all border-0", className)}>
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
-          <div className="p-2 rounded-full bg-accent/40">{icon}</div>
+    <Card className={cn("dashboard-stats-card", className)}>
+      <div className="flex flex-col items-center justify-center text-center w-full h-full">
+        <div className="flex items-center justify-center mb-2">
+          <div className="p-2 rounded-full bg-primary/10">{icon}</div>
         </div>
         
-        <div className="space-y-1">
-          <h3 className="text-3xl font-bold">{value}</h3>
-          {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
-        </div>
+        <div className="dashboard-stat-value">{value}</div>
+        
+        <div className="dashboard-stat-label">{title}</div>
+        
+        {subtitle && <p className="text-xs text-muted-foreground mt-2">{subtitle}</p>}
         
         {trend && (
           <p
             className={cn(
-              "text-xs font-medium flex items-center space-x-1",
+              "text-xs font-medium flex items-center space-x-1 mt-2",
               trend.isPositive ? "text-emerald-400" : "text-rose-400"
             )}
           >
