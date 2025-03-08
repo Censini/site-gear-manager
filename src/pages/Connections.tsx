@@ -1,4 +1,3 @@
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -155,7 +154,7 @@ const Connections = () => {
                   <TableCell>{connection.bandwidth}</TableCell>
                   <TableCell>{connection.sla}</TableCell>
                   <TableCell>
-                    <StatusBadge status={connection.status} />
+                    <StatusBadge status={connection.status as any} />
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">

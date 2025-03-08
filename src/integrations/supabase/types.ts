@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       equipment: {
         Row: {
+          config_markdown: string | null
           created_at: string | null
           firmware: string | null
           id: string
@@ -28,6 +29,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          config_markdown?: string | null
           created_at?: string | null
           firmware?: string | null
           id?: string
@@ -45,6 +47,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          config_markdown?: string | null
           created_at?: string | null
           firmware?: string | null
           id?: string

@@ -64,7 +64,7 @@ export interface DashboardStats {
   totalConnections: number;
   sitesWithIssues: number;
   equipmentByType: Record<string, number>;
-  equipmentByStatus: Record<string, number>;
+  equipmentByStatus: Record<EquipmentStatus, number>;
   recentActivity?: Array<{
     id: string;
     type: string;

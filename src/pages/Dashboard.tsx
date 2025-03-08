@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { supabase } from "@/integrations/supabase/client";
-import { Status, Equipment, Site, DashboardStats } from "@/types/types";
+import { Status, Equipment, Site, DashboardStats, EquipmentStatus } from "@/types/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const Dashboard = () => {
@@ -19,11 +19,16 @@ const Dashboard = () => {
   const [stats, setStats] = useState<DashboardStats>({
     totalSites: 0,
     totalEquipment: 0,
+    activeEquipment: 0,
+    totalConnections: 0,
+    sitesWithIssues: 0,
     equipmentByStatus: {
       active: 0,
       maintenance: 0,
       failure: 0,
-      unknown: 0
+      unknown: 0,
+      inactive: 0,
+      decommissioned: 0
     },
     equipmentByType: {
       router: 0,
@@ -33,8 +38,7 @@ const Dashboard = () => {
       server: 0,
       printer: 0,
       other: 0
-    },
-    sitesWithIssues: 0
+    }
   });
   const [loading, setLoading] = useState(true);
   
@@ -85,12 +89,15 @@ const Dashboard = () => {
         // Calculate statistics
         const totalEquipment = equipmentData?.length || 0;
         const totalSites = sitesData?.length || 0;
+        const totalConnections = connectionsData?.length || 0;
         
-        const equipmentByStatus: Record<Status, number> = {
+        const equipmentByStatus: Record<EquipmentStatus, number> = {
           active: 0,
           maintenance: 0,
           failure: 0,
-          unknown: 0
+          unknown: 0,
+          inactive: 0,
+          decommissioned: 0
         };
         
         const equipmentByType: Record<string, number> = {
@@ -103,10 +110,16 @@ const Dashboard = () => {
           other: 0
         };
         
+        let activeEquipment = 0;
+        
         equipmentData?.forEach((item: any) => {
           // Count by status
           if (item.status in equipmentByStatus) {
-            equipmentByStatus[item.status as Status]++;
+            equipmentByStatus[item.status as EquipmentStatus]++;
+            
+            if (item.status === 'active') {
+              activeEquipment++;
+            }
           } else {
             equipmentByStatus.unknown++;
           }
@@ -129,7 +142,9 @@ const Dashboard = () => {
         
         setStats({
           totalEquipment,
+          activeEquipment,
           totalSites,
+          totalConnections,
           equipmentByStatus,
           equipmentByType,
           sitesWithIssues: sitesWithIssuesCount
@@ -170,7 +185,7 @@ const Dashboard = () => {
         />
         <StatsCard
           title="Équipements Actifs"
-          value={stats.equipmentByStatus.active}
+          value={stats.activeEquipment}
           icon={<Network className="h-6 w-6 text-primary" />}
         />
         <StatsCard
