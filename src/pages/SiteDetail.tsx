@@ -61,6 +61,7 @@ const SiteDetail = () => {
       <div className="grid gap-6 md:grid-cols-3">
         <SiteInfoCard site={site} />
         <SiteResourcesCard 
+          siteId={id || ''}
           equipment={equipment} 
           connections={connections} 
           ipRanges={ipRanges} 
