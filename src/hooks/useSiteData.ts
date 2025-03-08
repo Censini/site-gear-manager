@@ -66,12 +66,14 @@ export const useSiteData = (id: string | undefined) => {
 
   // Function to refetch all data
   const refetch = async () => {
+    console.log("Refetching all site data");
     await Promise.all([
       refetchSite(),
       refetchEquipment(),
       refetchConnections(),
       refetchIPRanges()
     ]);
+    console.log("Refetch complete");
   };
   
   const isLoading = isLoadingSite || isLoadingEquipment || isLoadingConnections || isLoadingIPRanges || isDeleting;

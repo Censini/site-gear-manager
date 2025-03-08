@@ -10,6 +10,7 @@ import ConnectionsTab from "./ConnectionsTab";
 import IPRangesTab from "./IPRangesTab";
 import { Equipment, NetworkConnection, IPRange } from "@/types/types";
 import SelectExistingEquipment from "../equipment/SelectExistingEquipment";
+import SelectExistingConnection from "../connection/SelectExistingConnection";
 
 interface SiteResourcesCardProps {
   siteId: string;
@@ -21,6 +22,7 @@ interface SiteResourcesCardProps {
 const SiteResourcesCard = ({ siteId, equipment, connections, ipRanges }: SiteResourcesCardProps) => {
   const navigate = useNavigate();
   const [showExistingEquipment, setShowExistingEquipment] = useState(false);
+  const [showExistingConnection, setShowExistingConnection] = useState(false);
   
   const handleAddEquipment = () => {
     navigate(`/equipment/add?siteId=${siteId}`);
@@ -36,6 +38,10 @@ const SiteResourcesCard = ({ siteId, equipment, connections, ipRanges }: SiteRes
 
   const handleEquipmentSuccess = () => {
     setShowExistingEquipment(false);
+  };
+
+  const handleConnectionSuccess = () => {
+    setShowExistingConnection(false);
   };
   
   return (
@@ -77,13 +83,27 @@ const SiteResourcesCard = ({ siteId, equipment, connections, ipRanges }: SiteRes
           </TabsContent>
           
           <TabsContent value="connections">
-            <div className="mb-4 flex justify-end">
-              <Button onClick={handleAddConnection} size="sm">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Connection
-              </Button>
-            </div>
-            <ConnectionsTab connections={connections} />
+            {showExistingConnection ? (
+              <SelectExistingConnection
+                siteId={siteId}
+                onCancel={() => setShowExistingConnection(false)}
+                onSuccess={handleConnectionSuccess}
+              />
+            ) : (
+              <>
+                <div className="mb-4 flex justify-end gap-2">
+                  <Button onClick={() => setShowExistingConnection(true)} size="sm" variant="outline">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Assign Existing
+                  </Button>
+                  <Button onClick={handleAddConnection} size="sm">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Connection
+                  </Button>
+                </div>
+                <ConnectionsTab connections={connections} />
+              </>
+            )}
           </TabsContent>
           
           <TabsContent value="ip">

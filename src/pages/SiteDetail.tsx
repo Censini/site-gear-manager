@@ -66,6 +66,7 @@ const SiteDetail = () => {
           equipment={equipment} 
           connections={connections} 
           ipRanges={ipRanges} 
+          onRefresh={refetch}
         />
       </div>
     </div>
