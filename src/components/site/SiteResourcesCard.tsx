@@ -104,7 +104,7 @@ const SiteResourcesCard = ({ siteId, equipment, connections, ipRanges, onRefresh
                     Add Connection
                   </Button>
                 </div>
-                <ConnectionsTab connections={connections} />
+                <ConnectionsTab connections={connections} onRefresh={onRefresh} />
               </>
             )}
           </TabsContent>
