@@ -7,12 +7,19 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Save } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const Settings = () => {
-  const [darkMode, setDarkMode] = useState(false);
+  const { theme, setTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
   const [autoSave, setAutoSave] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  const isDarkMode = theme === "dark";
+
+  const handleToggleDarkMode = (checked: boolean) => {
+    setTheme(checked ? "dark" : "light");
+  };
 
   const handleSaveSettings = async () => {
     setIsSaving(true);
@@ -21,7 +28,7 @@ const Settings = () => {
       await new Promise(resolve => setTimeout(resolve, 800));
       
       // Save settings logic would go here
-      console.log("Settings saved:", { darkMode, notifications, autoSave });
+      console.log("Settings saved:", { darkMode: isDarkMode, notifications, autoSave });
       
       toast.success("Settings saved successfully");
     } catch (error) {
@@ -66,8 +73,8 @@ const Settings = () => {
                 </div>
                 <Switch 
                   id="dark-mode" 
-                  checked={darkMode} 
-                  onCheckedChange={setDarkMode} 
+                  checked={isDarkMode} 
+                  onCheckedChange={handleToggleDarkMode} 
                 />
               </div>
               
