@@ -1,15 +1,14 @@
-
 import { Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { EquipmentType, Status } from "@/types/types";
+import { EquipmentType, EquipmentStatus } from "@/types/types";
 
 interface EquipmentFiltersProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  statusFilter: Status | "all";
-  setStatusFilter: (status: Status | "all") => void;
+  statusFilter: EquipmentStatus | "all";
+  setStatusFilter: (status: EquipmentStatus | "all") => void;
   typeFilter: EquipmentType | "all";
   setTypeFilter: (type: EquipmentType | "all") => void;
   onAddEquipment: () => void;
@@ -39,7 +38,7 @@ const EquipmentFilters = ({
       <div className="flex flex-col sm:flex-row gap-2">
         <Select
           value={statusFilter}
-          onValueChange={(value) => setStatusFilter(value as Status | "all")}
+          onValueChange={(value) => setStatusFilter(value as EquipmentStatus | "all")}
         >
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Filter by status" />

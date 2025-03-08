@@ -99,7 +99,7 @@ const EquipmentDetail = () => {
       
       if (error) throw error;
       
-      return { success: true };
+      return;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["equipment", id] });

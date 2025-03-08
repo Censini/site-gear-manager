@@ -1,4 +1,3 @@
-
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardStats } from "@/types/types";
@@ -24,7 +23,7 @@ const COLORS = [
 const TypeChart = ({ stats }: TypeChartProps) => {
   const data = Object.entries(stats.equipmentByType).map(([key, value]) => ({
     name: TYPE_NAMES[key as keyof typeof TYPE_NAMES],
-    value
+    value: Number(value) || 0
   })).filter(item => item.value > 0);
 
   return (

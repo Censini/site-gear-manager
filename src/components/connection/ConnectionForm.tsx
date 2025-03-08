@@ -22,21 +22,21 @@ import {
 } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { NetworkConnection } from "@/types/types";
+import { NetworkConnection, NetworkConnectionType, NetworkConnectionStatus } from "@/types/types";
 import { Loader2 } from "lucide-react";
 
 const connectionSchema = z.object({
   siteId: z.string({
     required_error: "Please select a site",
   }),
-  type: z.enum(["fiber", "adsl", "sdsl", "satellite", "other"], {
+  type: z.enum(["fiber", "adsl", "sdsl", "satellite", "internet", "mpls", "vpn", "other"], {
     required_error: "Please select a connection type",
   }),
   provider: z.string().min(1, { message: "Provider is required" }),
   contractRef: z.string().optional(),
   bandwidth: z.string().optional(),
   sla: z.string().optional(),
-  status: z.enum(["active", "maintenance", "failure", "unknown"], {
+  status: z.enum(["active", "maintenance", "failure", "unknown", "inactive", "planned", "decommissioned"], {
     required_error: "Please select a status",
   }),
 });
@@ -62,12 +62,12 @@ const ConnectionForm = ({
   
   const defaultValues = initialValues || {
     siteId: connectionToEdit?.siteId || "",
-    type: connectionToEdit?.type || "fiber",
+    type: connectionToEdit?.type || "fiber" as NetworkConnectionType,
     provider: connectionToEdit?.provider || "",
     contractRef: connectionToEdit?.contractRef || "",
     bandwidth: connectionToEdit?.bandwidth || "",
     sla: connectionToEdit?.sla || "",
-    status: connectionToEdit?.status || "active",
+    status: connectionToEdit?.status || "active" as NetworkConnectionStatus,
   };
   
   const form = useForm<ConnectionFormValues>({
@@ -148,6 +148,9 @@ const ConnectionForm = ({
                   <SelectItem value="adsl">ADSL</SelectItem>
                   <SelectItem value="sdsl">SDSL</SelectItem>
                   <SelectItem value="satellite">Satellite</SelectItem>
+                  <SelectItem value="internet">Internet</SelectItem>
+                  <SelectItem value="mpls">MPLS</SelectItem>
+                  <SelectItem value="vpn">VPN</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
@@ -231,6 +234,9 @@ const ConnectionForm = ({
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="maintenance">Maintenance</SelectItem>
                   <SelectItem value="failure">Failure</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="planned">Planned</SelectItem>
+                  <SelectItem value="decommissioned">Decommissioned</SelectItem>
                   <SelectItem value="unknown">Unknown</SelectItem>
                 </SelectContent>
               </Select>

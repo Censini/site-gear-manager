@@ -1,6 +1,6 @@
 
 import { useState, useMemo } from "react";
-import { Equipment, EquipmentType, Status } from "@/types/types";
+import { Equipment, EquipmentType, EquipmentStatus } from "@/types/types";
 
 // Helper functions for filtering
 const matchesSearchTerm = (item: Equipment, searchTerm: string): boolean => {
@@ -13,7 +13,7 @@ const matchesSearchTerm = (item: Equipment, searchTerm: string): boolean => {
   );
 };
 
-const matchesStatusFilter = (item: Equipment, statusFilter: Status | "all"): boolean => {
+const matchesStatusFilter = (item: Equipment, statusFilter: EquipmentStatus | "all"): boolean => {
   return statusFilter === "all" || item.status === statusFilter;
 };
 
@@ -23,7 +23,7 @@ const matchesTypeFilter = (item: Equipment, typeFilter: EquipmentType | "all"): 
 
 export const useEquipmentSearch = (equipmentList: Equipment[]) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<EquipmentStatus | "all">("all");
   const [typeFilter, setTypeFilter] = useState<EquipmentType | "all">("all");
   
   const filteredEquipment = useMemo(() => {

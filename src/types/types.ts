@@ -1,6 +1,7 @@
+
 // Equipment Types
-export type EquipmentType = 'server' | 'workstation' | 'printer' | 'switch' | 'router' | 'wifi' | 'other';
-export type EquipmentStatus = 'active' | 'inactive' | 'maintenance' | 'decommissioned';
+export type EquipmentType = 'server' | 'workstation' | 'printer' | 'switch' | 'router' | 'wifi' | 'hub' | 'other';
+export type EquipmentStatus = 'active' | 'inactive' | 'maintenance' | 'failure' | 'decommissioned' | 'unknown';
 
 export interface Equipment {
   id: string;
@@ -29,8 +30,8 @@ export type Site = {
   contactPhone: string;
 };
 
-export type NetworkConnectionType = 'internet' | 'mpls' | 'vpn' | 'other';
-export type NetworkConnectionStatus = 'active' | 'inactive' | 'planned' | 'decommissioned';
+export type NetworkConnectionType = 'internet' | 'mpls' | 'vpn' | 'fiber' | 'adsl' | 'sdsl' | 'satellite' | 'other';
+export type NetworkConnectionStatus = 'active' | 'inactive' | 'planned' | 'maintenance' | 'failure' | 'unknown' | 'decommissioned';
 
 export interface NetworkConnection {
   id: string;
@@ -50,4 +51,24 @@ export interface IPRange {
   description?: string;
   isReserved: boolean;
   dhcpScope: boolean;
+}
+
+// Alias Status pour l'ancienne utilisation du type
+export type Status = EquipmentStatus;
+
+// Interface pour les statistiques du tableau de bord
+export interface DashboardStats {
+  totalEquipment: number;
+  activeEquipment: number;
+  totalSites: number;
+  totalConnections: number;
+  equipmentByType: Record<string, number>;
+  equipmentByStatus: Record<string, number>;
+  recentActivity: Array<{
+    id: string;
+    type: string;
+    name: string;
+    date: string;
+    action: string;
+  }>;
 }

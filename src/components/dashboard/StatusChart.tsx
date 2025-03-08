@@ -1,4 +1,3 @@
-
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardStats } from "@/types/types";
@@ -10,7 +9,7 @@ interface StatusChartProps {
 const COLORS = ["#00D2C6", "#7557FF", "#FF7066", "#94a3b8"];
 const STATUS_NAMES = {
   active: "Active",
-  maintenance: "Maintenance",
+  maintenance: "Maintenance", 
   failure: "Échec",
   unknown: "Inconnu"
 };
@@ -18,7 +17,7 @@ const STATUS_NAMES = {
 const StatusChart = ({ stats }: StatusChartProps) => {
   const data = Object.entries(stats.equipmentByStatus).map(([key, value]) => ({
     name: STATUS_NAMES[key as keyof typeof STATUS_NAMES],
-    value
+    value: Number(value) || 0
   })).filter(item => item.value > 0);
 
   // Calculate percentage for display

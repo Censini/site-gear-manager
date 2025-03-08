@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { EquipmentType, Status, Equipment } from "@/types/types";
+import { EquipmentType, EquipmentStatus, Equipment } from "@/types/types";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -20,7 +20,7 @@ interface EquipmentFormProps {
     ipAddress: string;
     macAddress: string;
     firmware: string;
-    status: Status;
+    status: EquipmentStatus;
     netbios: string;
     siteId: string;
   };
@@ -32,7 +32,7 @@ interface EquipmentFormProps {
     ipAddress: string;
     macAddress: string;
     firmware: string;
-    status: Status;
+    status: EquipmentStatus;
     netbios: string;
     siteId: string;
     installDate: string;
@@ -71,7 +71,7 @@ const EquipmentForm = ({
     ipAddress: "",
     macAddress: "",
     firmware: "",
-    status: "active" as Status,
+    status: "active" as EquipmentStatus,
     netbios: "",
     siteId: "not_deployed"
   };
@@ -391,4 +391,3 @@ const EquipmentForm = ({
 };
 
 export default EquipmentForm;
-
