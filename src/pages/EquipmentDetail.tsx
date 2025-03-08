@@ -1,33 +1,20 @@
-import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import StatusBadge from "@/components/ui/StatusBadge";
 import EquipmentTypeIcon from "@/components/ui/EquipmentTypeIcon";
 import { ArrowLeft, Edit, Trash2, Loader2 } from "lucide-react";
 import { Equipment } from "@/types/types";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import ConfigMarkdownViewer from "@/components/equipment/ConfigMarkdownViewer";
+import EquipmentDeleteDialog from "@/components/equipment/EquipmentDeleteDialog";
 
 const EquipmentDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   const { data: equipment, isLoading, error } = useQuery({
     queryKey: ["equipment", id],
@@ -40,7 +27,10 @@ const EquipmentDetail = () => {
         .eq("id", id)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching equipment:", error);
+        throw error;
+      }
       
       return {
         id: data.id,
@@ -101,20 +91,11 @@ const EquipmentDetail = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["equipment", id] });
-      toast({
-        title: "Configuration enregistrée",
-        description: "La configuration de l'équipement a été mise à jour avec succès.",
-      });
+      toast.success("Configuration enregistrée");
     },
     onError: (error) => {
       console.error("Error saving config:", error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: error instanceof Error 
-          ? error.message 
-          : "Une erreur s'est produite lors de l'enregistrement de la configuration.",
-      });
+      toast.error("Erreur lors de l'enregistrement de la configuration");
     }
   });
 
@@ -124,40 +105,6 @@ const EquipmentDetail = () => {
 
   const handleEdit = () => {
     navigate(`/equipment/edit/${id}`);
-  };
-
-  const handleDelete = async () => {
-    if (!id) return;
-    
-    setIsDeleting(true);
-    try {
-      const { error } = await supabase
-        .from("equipment")
-        .delete()
-        .eq("id", id);
-      
-      if (error) throw error;
-      
-      queryClient.invalidateQueries({ queryKey: ["equipment"] });
-      toast({
-        title: "Équipement supprimé",
-        description: "L'équipement a été supprimé avec succès.",
-      });
-      
-      navigate("/equipment");
-    } catch (error) {
-      console.error("Error deleting equipment:", error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: error instanceof Error 
-          ? error.message 
-          : "Une erreur s'est produite lors de la suppression de l'équipement.",
-      });
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteDialog(false);
-    }
   };
 
   if (isLoading) {
@@ -201,26 +148,21 @@ const EquipmentDetail = () => {
             onClick={handleEdit}
           >
             <Edit className="h-4 w-4" />
-            <span>Edit</span>
+            <span>Modifier</span>
           </Button>
-          <Button 
-            variant="destructive" 
-            className="flex items-center gap-1 flex-1 md:flex-none"
-            onClick={() => setShowDeleteDialog(true)}
-            disabled={isDeleting}
+          
+          <EquipmentDeleteDialog
+            equipmentId={equipment.id}
+            equipmentName={equipment.name}
           >
-            {isDeleting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Deleting...</span>
-              </>
-            ) : (
-              <>
-                <Trash2 className="h-4 w-4" />
-                <span>Delete</span>
-              </>
-            )}
-          </Button>
+            <Button 
+              variant="destructive" 
+              className="flex items-center gap-1 flex-1 md:flex-none"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Supprimer</span>
+            </Button>
+          </EquipmentDeleteDialog>
         </div>
       </div>
 
@@ -300,30 +242,6 @@ const EquipmentDetail = () => {
           onSave={handleSaveConfig}
         />
       )}
-      
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the equipment <strong>{equipment.name}</strong> from the database.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
-              {isDeleting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                "Delete"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
