@@ -1,18 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { IPRange } from "@/types/types";
 
 interface SelectExistingIPRangeProps {
@@ -22,55 +16,65 @@ interface SelectExistingIPRangeProps {
 }
 
 const SelectExistingIPRange = ({ siteId, onCancel, onSuccess }: SelectExistingIPRangeProps) => {
-  const [selectedRange, setSelectedRange] = useState<string | null>(null);
+  const [selectedRanges, setSelectedRanges] = useState<string[]>([]);
   const [isAssigning, setIsAssigning] = useState(false);
 
-  // Fetch unassigned IP ranges
   const { data: ipRanges = [], isLoading } = useQuery({
-    queryKey: ['unassigned-ip-ranges'],
+    queryKey: ["unassignedIPRanges"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('ip_ranges')
-        .select('*')
-        .is('site_id', null);
-        
+        .from("ip_ranges")
+        .select("*")
+        .is("site_id", null);
+      
       if (error) {
-        console.error('Error fetching unassigned IP ranges:', error);
-        toast.error('Failed to load unassigned IP ranges');
-        throw error;
+        console.error("Error fetching unassigned IP ranges:", error);
+        toast.error("Failed to load unassigned IP ranges");
+        return [];
       }
       
-      return data.map((item): IPRange => ({
-        id: item.id,
-        siteId: item.site_id || '',
-        range: item.range,
-        description: item.description || '',
-        isReserved: item.is_reserved || false,
-        dhcpScope: item.dhcp_scope || false
-      }));
+      return data.map((range) => ({
+        id: range.id,
+        range: range.range,
+        description: range.description,
+        isReserved: range.is_reserved,
+        dhcpScope: range.dhcp_scope,
+        siteId: range.site_id
+      })) as IPRange[];
     }
   });
 
-  const handleAssign = async () => {
-    if (!selectedRange) {
-      toast.error('Please select an IP range to assign');
+  const handleToggleRange = (id: string) => {
+    setSelectedRanges((prev) => 
+      prev.includes(id) 
+        ? prev.filter(rangeId => rangeId !== id) 
+        : [...prev, id]
+    );
+  };
+
+  const handleAssignRanges = async () => {
+    if (selectedRanges.length === 0) {
+      toast.error("Please select at least one IP range");
       return;
     }
 
     setIsAssigning(true);
+
     try {
       const { error } = await supabase
-        .from('ip_ranges')
+        .from("ip_ranges")
         .update({ site_id: siteId })
-        .eq('id', selectedRange);
-
-      if (error) throw error;
+        .in("id", selectedRanges);
       
-      toast.success('IP range assigned to site successfully');
+      if (error) {
+        throw error;
+      }
+
+      toast.success(`Successfully assigned ${selectedRanges.length} IP range(s) to site`);
       onSuccess();
     } catch (error) {
-      console.error('Error assigning IP range:', error);
-      toast.error('Failed to assign IP range to site');
+      console.error("Error assigning IP ranges:", error);
+      toast.error("Failed to assign IP ranges");
     } finally {
       setIsAssigning(false);
     }
@@ -78,7 +82,7 @@ const SelectExistingIPRange = ({ siteId, onCancel, onSuccess }: SelectExistingIP
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex justify-center items-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -103,17 +107,11 @@ const SelectExistingIPRange = ({ siteId, onCancel, onSuccess }: SelectExistingIP
           </TableHeader>
           <TableBody>
             {ipRanges.map((range) => (
-              <TableRow 
-                key={range.id}
-                className={selectedRange === range.id ? "bg-muted cursor-pointer" : "cursor-pointer"}
-                onClick={() => setSelectedRange(range.id)}
-              >
+              <TableRow key={range.id}>
                 <TableCell>
-                  <input 
-                    type="radio" 
-                    checked={selectedRange === range.id} 
-                    onChange={() => setSelectedRange(range.id)}
-                    className="h-4 w-4"
+                  <Checkbox
+                    checked={selectedRanges.includes(range.id)}
+                    onCheckedChange={() => handleToggleRange(range.id)}
                   />
                 </TableCell>
                 <TableCell className="font-medium">{range.range}</TableCell>
@@ -125,15 +123,23 @@ const SelectExistingIPRange = ({ siteId, onCancel, onSuccess }: SelectExistingIP
           </TableBody>
         </Table>
       )}
-      
+
       <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onCancel}>Annuler</Button>
+        <Button variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
         <Button 
-          onClick={handleAssign} 
-          disabled={!selectedRange || isAssigning}
+          onClick={handleAssignRanges} 
+          disabled={selectedRanges.length === 0 || isAssigning}
         >
-          {isAssigning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Assigner le range IP
+          {isAssigning ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Assigning...
+            </>
+          ) : (
+            `Assign ${selectedRanges.length} Range${selectedRanges.length !== 1 ? 's' : ''}`
+          )}
         </Button>
       </div>
     </div>

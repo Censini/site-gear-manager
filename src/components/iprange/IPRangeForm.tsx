@@ -120,8 +120,8 @@ export const IPRangeForm = ({
               <FormItem>
                 <FormLabel>Site</FormLabel>
                 <Select 
-                  value={field.value || ""} 
-                  onValueChange={(value) => field.onChange(value === "" ? null : value)}
+                  value={field.value || "none"} 
+                  onValueChange={(value) => field.onChange(value === "none" ? null : value)}
                   disabled={sitesLoading}
                 >
                   <FormControl>
@@ -130,7 +130,7 @@ export const IPRangeForm = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">No site (unassigned)</SelectItem>
+                    <SelectItem value="none">No site (unassigned)</SelectItem>
                     {sitesLoading ? (
                       <div className="flex items-center justify-center p-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
