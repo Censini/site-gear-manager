@@ -41,10 +41,15 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isMobile, mobileSidebarOpen]);
+
+  // Handle menu click for mobile
+  const handleMenuClick = () => {
+    setMobileSidebarOpen(!mobileSidebarOpen);
+  };
   
   return (
     <div className={`min-h-screen ${theme === "dark" ? "dark" : ""}`}>
-      <Navbar onMenuClick={() => setMobileSidebarOpen(!mobileSidebarOpen)} />
+      <Navbar onMenuClick={handleMenuClick} />
       <div className="flex relative">
         {/* Desktop Sidebar */}
         <div
