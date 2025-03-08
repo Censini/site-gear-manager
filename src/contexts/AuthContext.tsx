@@ -7,7 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 type AuthContextType = {
   session: Session | null;
   isLoading: boolean;
-  signInWithGitHub: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -33,26 +34,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithGitHub = async () => {
+  const signInWithEmail = async (email: string, password: string) => {
     try {
-      // Utilisez l'URL de prévisualisation Lovable au lieu de window.location.origin
-      // L'URL de prévisualisation est générée dynamiquement par Lovable
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'github',
-        options: {
-          redirectTo: window.location.origin,
-        },
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
       
       if (error) throw error;
     } catch (error) {
-      console.error('GitHub sign in error:', error);
+      console.error('Email sign in error:', error);
       toast({
         title: "Échec de connexion",
         description: error instanceof Error ? error.message : "Une erreur s'est produite pendant la connexion",
         variant: "destructive",
       });
-      throw error; // Re-throw to allow handling in the Auth component
+      throw error;
+    }
+  };
+
+  const signUpWithEmail = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Inscription réussie",
+        description: "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.",
+      });
+    } catch (error) {
+      console.error('Email sign up error:', error);
+      toast({
+        title: "Échec d'inscription",
+        description: error instanceof Error ? error.message : "Une erreur s'est produite pendant l'inscription",
+        variant: "destructive",
+      });
+      throw error;
     }
   };
 
@@ -70,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, isLoading, signInWithGitHub, signOut }}>
+    <AuthContext.Provider value={{ session, isLoading, signInWithEmail, signUpWithEmail, signOut }}>
       {children}
     </AuthContext.Provider>
   );
