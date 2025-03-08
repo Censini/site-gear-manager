@@ -1,11 +1,12 @@
 
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import EquipmentTable from "@/components/equipment/EquipmentTable";
+import EquipmentFilters from "@/components/equipment/EquipmentFilters";
 import { Loader2 } from "lucide-react";
 import { Equipment } from "@/types/types";
 import { useNavigate } from "react-router-dom";
+import { useEquipmentSearch } from "@/hooks/useEquipmentSearch";
 
 const EquipmentPage = () => {
   const navigate = useNavigate();
@@ -42,6 +43,16 @@ const EquipmentPage = () => {
     }
   });
 
+  const { 
+    searchTerm, 
+    setSearchTerm, 
+    statusFilter, 
+    setStatusFilter, 
+    typeFilter, 
+    setTypeFilter, 
+    filteredEquipment 
+  } = useEquipmentSearch(equipmentList || []);
+
   const handleAddEquipment = () => {
     navigate("/equipment/add");
   };
@@ -68,8 +79,19 @@ const EquipmentPage = () => {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">Equipment Inventory</h1>
+      
+      <EquipmentFilters
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        typeFilter={typeFilter}
+        setTypeFilter={setTypeFilter}
+        onAddEquipment={handleAddEquipment}
+      />
+      
       <EquipmentTable 
-        equipmentList={equipmentList || []} 
+        equipmentList={filteredEquipment} 
         onAddEquipment={handleAddEquipment}
       />
     </div>
