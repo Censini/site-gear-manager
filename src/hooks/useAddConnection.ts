@@ -11,6 +11,9 @@ export const useAddConnection = () => {
     mutationFn: async (connectionData: Omit<NetworkConnection, "id" | "siteName">) => {
       console.log("Adding new connection:", connectionData);
 
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
         .from("network_connections")
         .insert({
@@ -21,6 +24,7 @@ export const useAddConnection = () => {
           bandwidth: connectionData.bandwidth,
           sla: connectionData.sla,
           status: connectionData.status,
+          user_id: user?.id // Add the user ID to comply with RLS
         })
         .select("*")
         .single();
