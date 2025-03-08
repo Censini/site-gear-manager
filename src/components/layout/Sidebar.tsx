@@ -12,6 +12,7 @@ import {
   Settings,
   User
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const sidebarItems = [
   { name: "Tableau de bord", path: "/", icon: Home },
@@ -26,6 +27,13 @@ const sidebarItems = [
 
 const Sidebar = () => {
   const location = useLocation();
+  const { session } = useAuth();
+  
+  // Extraire l'adresse email de l'utilisateur ou utiliser une valeur par défaut
+  const userEmail = session?.user?.email || "Non connecté";
+  
+  // Prendre la première partie de l'email avant @ pour le nom d'utilisateur
+  const username = userEmail.split('@')[0] || "Invité";
 
   return (
     <aside className="h-full flex flex-col justify-between py-4 bg-sidebar w-full">
@@ -62,8 +70,8 @@ const Sidebar = () => {
             <User className="size-5 text-muted-foreground" />
           </div>
           <div>
-            <p className="text-sm font-medium text-sidebar-foreground">Administrateur</p>
-            <p className="text-xs text-muted-foreground">admin@exemple.com</p>
+            <p className="text-sm font-medium text-sidebar-foreground">{username}</p>
+            <p className="text-xs text-muted-foreground">{userEmail}</p>
           </div>
         </div>
       </div>
