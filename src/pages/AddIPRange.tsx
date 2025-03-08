@@ -4,7 +4,6 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -17,14 +16,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAddIPRange } from "@/hooks/useAddIPRange";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 const IPRangeSchema = z.object({
   range: z.string().min(1, "IP range is required"),
   description: z.string().optional(),
   isReserved: z.boolean().default(false),
   dhcpScope: z.boolean().default(false),
-  siteId: z.string().min(1, "Site ID is required")
+  siteId: z.string().min(1, "Site selection is required")
 });
 
 type IPRangeFormValues = z.infer<typeof IPRangeSchema>;
@@ -32,11 +35,29 @@ type IPRangeFormValues = z.infer<typeof IPRangeSchema>;
 const AddIPRange = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const queryClient = useQueryClient();
   
   // Get site ID from URL query parameter
   const queryParams = new URLSearchParams(location.search);
-  const siteId = queryParams.get("siteId") || "";
+  const siteIdFromQuery = queryParams.get("siteId") || "";
+
+  // Fetch all sites for the dropdown
+  const { data: sites = [], isLoading: sitesLoading } = useQuery({
+    queryKey: ["sites"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sites")
+        .select("id, name")
+        .order("name");
+      
+      if (error) {
+        console.error("Error fetching sites:", error);
+        toast.error("Failed to load sites");
+        return [];
+      }
+      
+      return data;
+    }
+  });
 
   const form = useForm<IPRangeFormValues>({
     resolver: zodResolver(IPRangeSchema),
@@ -45,54 +66,24 @@ const AddIPRange = () => {
       description: "",
       isReserved: false,
       dhcpScope: false,
-      siteId: siteId
+      siteId: siteIdFromQuery
     }
   });
 
-  const addIPRangeMutation = useMutation({
-    mutationFn: async (data: IPRangeFormValues) => {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { data: result, error } = await supabase
-        .from("ip_ranges")
-        .insert({
-          range: data.range,
-          description: data.description || null,
-          is_reserved: data.isReserved,
-          dhcp_scope: data.dhcpScope,
-          site_id: data.siteId,
-          user_id: user?.id
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error adding IP range:", error);
-        throw error;
-      }
-
-      return result;
-    },
-    onSuccess: () => {
-      toast.success("IP range added successfully");
-      queryClient.invalidateQueries({ queryKey: ["ipRanges"] });
-      
-      // Navigate back to site detail if siteId is provided
-      if (siteId) {
-        navigate(`/sites/${siteId}`);
-      } else {
-        navigate("/ipam");
-      }
-    },
-    onError: (error) => {
-      console.error("Error in add IP range mutation:", error);
-      toast.error("Failed to add IP range");
-    }
-  });
+  const addIPRange = useAddIPRange();
 
   const onSubmit = (data: IPRangeFormValues) => {
-    addIPRangeMutation.mutate(data);
+    console.log("Form submitted with values:", data);
+    addIPRange.mutate(data, {
+      onSuccess: () => {
+        // Navigate back to site detail if siteId is provided, otherwise to IPAM
+        if (data.siteId) {
+          navigate(`/sites/${data.siteId}`);
+        } else {
+          navigate("/ipam");
+        }
+      }
+    });
   };
 
   return (
@@ -137,51 +128,88 @@ const AddIPRange = () => {
 
             <FormField
               control={form.control}
-              name="dhcpScope"
+              name="siteId"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>DHCP Scope</FormLabel>
-                  </div>
+                <FormItem>
+                  <FormLabel>Site*</FormLabel>
+                  <Select 
+                    value={field.value} 
+                    onValueChange={field.onChange}
+                    disabled={sitesLoading}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a site" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {sitesLoading ? (
+                        <div className="flex items-center justify-center p-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </div>
+                      ) : (
+                        sites.map((site) => (
+                          <SelectItem key={site.id} value={site.id}>
+                            {site.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
                 </FormItem>
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="isReserved"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>Reserved Range</FormLabel>
-                  </div>
-                </FormItem>
-              )}
-            />
+            <div className="flex space-x-4">
+              <FormField
+                control={form.control}
+                name="dhcpScope"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>DHCP Scope</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="isReserved"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Reserved Range</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
 
           <div className="flex justify-end gap-4">
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => siteId ? navigate(`/sites/${siteId}`) : navigate("/ipam")}
+              onClick={() => siteIdFromQuery ? navigate(`/sites/${siteIdFromQuery}`) : navigate("/ipam")}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={addIPRangeMutation.isPending}>
-              {addIPRangeMutation.isPending ? "Adding..." : "Add IP Range"}
+            <Button type="submit" disabled={addIPRange.isPending}>
+              {addIPRange.isPending ? "Adding..." : "Add IP Range"}
             </Button>
           </div>
         </form>
