@@ -17,9 +17,10 @@ interface SiteResourcesCardProps {
   equipment: Equipment[];
   connections: NetworkConnection[];
   ipRanges: IPRange[];
+  onRefresh?: () => Promise<void>;
 }
 
-const SiteResourcesCard = ({ siteId, equipment, connections, ipRanges }: SiteResourcesCardProps) => {
+const SiteResourcesCard = ({ siteId, equipment, connections, ipRanges, onRefresh }: SiteResourcesCardProps) => {
   const navigate = useNavigate();
   const [showExistingEquipment, setShowExistingEquipment] = useState(false);
   const [showExistingConnection, setShowExistingConnection] = useState(false);
@@ -38,10 +39,12 @@ const SiteResourcesCard = ({ siteId, equipment, connections, ipRanges }: SiteRes
 
   const handleEquipmentSuccess = () => {
     setShowExistingEquipment(false);
+    if (onRefresh) onRefresh();
   };
 
   const handleConnectionSuccess = () => {
     setShowExistingConnection(false);
+    if (onRefresh) onRefresh();
   };
   
   return (
