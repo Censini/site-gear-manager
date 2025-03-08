@@ -27,24 +27,31 @@ const Sidebar = () => {
   const location = useLocation();
 
   return (
-    <aside className="hidden md:block w-64 bg-white shadow-md h-[calc(100vh-4rem)]">
-      <nav className="p-4 space-y-1">
-        {sidebarItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={cn(
-              "flex items-center space-x-3 px-4 py-3 rounded-md text-sm font-medium transition-colors",
-              location.pathname === item.path
-                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                : "text-gray-700 hover:bg-muted"
-            )}
-          >
-            <item.icon className="h-5 w-5" />
-            <span>{item.name}</span>
-          </Link>
-        ))}
-      </nav>
+    <aside className="h-[calc(100vh-4rem)] bg-sidebar dark:bg-sidebar md:shadow-md fixed md:relative top-16 md:top-0 left-0 z-40 w-64 overflow-y-auto transition-transform transform">
+      <div className="py-8">
+        <div className="px-4 mb-6">
+          <h2 className="text-xl font-semibold text-sidebar-foreground dark:text-sidebar-foreground">
+            Network Inventory
+          </h2>
+        </div>
+        <nav className="space-y-1 px-2">
+          {sidebarItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={cn(
+                "flex items-center space-x-3 px-4 py-3 rounded-md text-sm font-medium transition-colors hover:bg-muted hover:text-primary",
+                location.pathname === item.path
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-sidebar-accent dark:text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+              <span>{item.name}</span>
+            </Link>
+          ))}
+        </nav>
+      </div>
     </aside>
   );
 };
