@@ -1,3 +1,4 @@
+
 export type Status = "active" | "maintenance" | "failure" | "unknown";
 
 export interface Site {
@@ -54,6 +55,7 @@ export interface IPRange {
   description: string;
   isReserved: boolean;
   dhcpScope: boolean;
+  siteName?: string;
 }
 
 export interface DashboardStats {

@@ -1,26 +1,46 @@
 
-import { ipRanges, getSiteById } from "@/data/mockData";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useGetIPRanges } from "@/hooks/useGetIPRanges";
+import { useNavigate } from "react-router-dom";
 
 const IPAM = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [siteFilter, setSiteFilter] = useState<string>("all");
+  
+  const { data: ipRanges = [], isLoading } = useGetIPRanges();
+  
+  // Get unique sites for the filter
+  const uniqueSites = ipRanges.reduce((sites: {id: string, name: string}[], range) => {
+    if (range.siteId && !sites.some(site => site.id === range.siteId)) {
+      sites.push({
+        id: range.siteId,
+        name: range.siteName || "Unknown Site"
+      });
+    }
+    return sites;
+  }, []);
 
   const filteredRanges = ipRanges.filter((range) => {
     const matchesSearch = 
       range.range.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      range.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (range.description && range.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (range.siteName && range.siteName.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesSite = siteFilter === "all" || range.siteId === siteFilter;
     
     return matchesSearch && matchesSite;
   });
+
+  const handleAddRange = () => {
+    navigate("/ipam/add");
+  };
 
   return (
     <div className="space-y-6">
@@ -55,19 +75,14 @@ const IPAM = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All sites</SelectItem>
-                    {ipRanges.map((range) => {
-                      const site = getSiteById(range.siteId);
-                      return (
-                        <SelectItem key={range.siteId} value={range.siteId}>
-                          {site?.name}
-                        </SelectItem>
-                      );
-                    }).filter((item, index, self) => 
-                      self.findIndex(t => t.key === item.key) === index
-                    )}
+                    {uniqueSites.map((site) => (
+                      <SelectItem key={site.id} value={site.id}>
+                        {site.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                <Button className="flex items-center gap-1">
+                <Button className="flex items-center gap-1" onClick={handleAddRange}>
                   <Plus className="h-4 w-4" />
                   <span>Add Range</span>
                 </Button>
@@ -75,35 +90,41 @@ const IPAM = () => {
             </div>
 
             <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>IP Range</TableHead>
-                    <TableHead>Site</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>DHCP Scope</TableHead>
-                    <TableHead>Reserved</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRanges.map((range) => (
-                    <TableRow key={range.id}>
-                      <TableCell className="font-medium">{range.range}</TableCell>
-                      <TableCell>{getSiteById(range.siteId)?.name}</TableCell>
-                      <TableCell>{range.description}</TableCell>
-                      <TableCell>{range.dhcpScope ? "Yes" : "No"}</TableCell>
-                      <TableCell>{range.isReserved ? "Yes" : "No"}</TableCell>
-                    </TableRow>
-                  ))}
-                  {filteredRanges.length === 0 && (
+              {isLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center">
-                        No IP ranges found.
-                      </TableCell>
+                      <TableHead>IP Range</TableHead>
+                      <TableHead>Site</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>DHCP Scope</TableHead>
+                      <TableHead>Reserved</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredRanges.map((range) => (
+                      <TableRow key={range.id}>
+                        <TableCell className="font-medium">{range.range}</TableCell>
+                        <TableCell>{range.siteName || "—"}</TableCell>
+                        <TableCell>{range.description || "—"}</TableCell>
+                        <TableCell>{range.dhcpScope ? "Yes" : "No"}</TableCell>
+                        <TableCell>{range.isReserved ? "Yes" : "No"}</TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredRanges.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center">
+                          No IP ranges found.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </div>
           </div>
         </CardContent>
