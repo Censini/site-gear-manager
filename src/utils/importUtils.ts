@@ -1,3 +1,4 @@
+
 import Papa from 'papaparse';
 import { z } from 'zod';
 import { toast } from 'sonner';
@@ -148,36 +149,60 @@ export const saveImportedData = async (data: any) => {
   
   console.log("Data to save:", data);
   
+  // Mapping to store the original site IDs to the newly created UUID
+  const siteIdMapping: Record<string, string> = {};
+  
   try {
     // Handle different data formats
     if (Array.isArray(data)) {
-      // If it's a flat array, try to determine the type of each item
-      for (const item of data) {
-        await saveItemByType(item, results);
-      }
-    } else {
-      // If it's a structured object with separate arrays for each type
-      if (data.sites && Array.isArray(data.sites)) {
-        for (const site of data.sites) {
-          await saveSite(site, results);
+      // Traiter d'abord tous les sites pour construire le mapping d'IDs
+      const sites = data.filter(item => 
+        item.location && item.country
+      );
+      
+      for (const site of sites) {
+        const originalId = site.id || 'site-' + Date.now();
+        const newSiteId = await saveSite(site, results);
+        if (newSiteId) {
+          siteIdMapping[originalId] = newSiteId;
         }
       }
       
+      // Ensuite traiter le reste des éléments
+      for (const item of data) {
+        if (!(item.location && item.country)) {
+          await saveItemByType(item, results, siteIdMapping);
+        }
+      }
+    } else {
+      // Si c'est une structure avec des tableaux pour chaque type
+      if (data.sites && Array.isArray(data.sites)) {
+        // D'abord traiter les sites pour construire le mapping
+        for (const site of data.sites) {
+          const originalId = site.id || site.name.replace(/\s+/g, '-').toLowerCase();
+          const newSiteId = await saveSite(site, results);
+          if (newSiteId) {
+            siteIdMapping[originalId] = newSiteId;
+          }
+        }
+      }
+      
+      // Ensuite traiter l'équipement avec le mapping des sites
       if (data.equipment && Array.isArray(data.equipment)) {
         for (const eq of data.equipment) {
-          await saveEquipment(eq, results);
+          await saveEquipment(eq, results, siteIdMapping);
         }
       }
       
       if (data.connections && Array.isArray(data.connections)) {
         for (const conn of data.connections) {
-          await saveConnection(conn, results);
+          await saveConnection(conn, results, siteIdMapping);
         }
       }
       
       if (data.ipRanges && Array.isArray(data.ipRanges)) {
         for (const range of data.ipRanges) {
-          await saveIPRange(range, results);
+          await saveIPRange(range, results, siteIdMapping);
         }
       }
     }
@@ -190,19 +215,17 @@ export const saveImportedData = async (data: any) => {
 };
 
 // Helper function to save an item based on its type
-const saveItemByType = async (item: any, results: any) => {
+const saveItemByType = async (item: any, results: any, siteIdMapping: Record<string, string>) => {
   // Try to infer the item type from its properties
-  if (item.location && item.country) {
-    await saveSite(item, results);
-  } else if (item.type === 'router' || item.type === 'switch' || item.type === 'server' || 
+  if (item.type === 'router' || item.type === 'switch' || item.type === 'server' || 
              item.type === 'wifi' || item.type === 'hub' || item.type === 'printer' || 
              item.type === 'other' || item.macAddress) {
-    await saveEquipment(item, results);
+    await saveEquipment(item, results, siteIdMapping);
   } else if (item.provider && (item.type === 'fiber' || item.type === 'adsl' || 
              item.type === 'sdsl' || item.type === 'satellite' || item.type === 'other')) {
-    await saveConnection(item, results);
+    await saveConnection(item, results, siteIdMapping);
   } else if (item.range && (item.dhcpScope !== undefined || item.isReserved !== undefined)) {
-    await saveIPRange(item, results);
+    await saveIPRange(item, results, siteIdMapping);
   } else {
     console.warn('Could not determine type for item:', item);
   }
@@ -222,8 +245,24 @@ const getValidUUID = (id: string | undefined): string => {
   return uuidv4();
 };
 
+// Helper function to get latest site IDs if needed
+const getFirstSiteId = async (): Promise<string | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('sites')
+      .select('id')
+      .limit(1);
+    
+    if (error) throw error;
+    return data.length > 0 ? data[0].id : null;
+  } catch (error) {
+    console.error('Error getting site ID:', error);
+    return null;
+  }
+};
+
 // Helper functions to save each type of data
-const saveSite = async (site: any, results: any) => {
+const saveSite = async (site: any, results: any): Promise<string | null> => {
   try {
     // Générer un UUID valide
     const validId = getValidUUID(site.id);
@@ -248,23 +287,47 @@ const saveSite = async (site: any, results: any) => {
     
     if (error) throw error;
     results.sites.success++;
+    return validId;
   } catch (error) {
     console.error('Error saving site:', error);
     results.sites.error++;
+    return null;
   }
 };
 
-const saveEquipment = async (equipment: any, results: any) => {
+const saveEquipment = async (equipment: any, results: any, siteIdMapping: Record<string, string>) => {
   try {
     // Générer un UUID valide
     const validId = getValidUUID(equipment.id);
-    const validSiteId = getValidUUID(equipment.siteId || equipment.site_id);
+    
+    // Récupérer le site ID mappé ou utiliser le premier site disponible
+    let siteId = null;
+    
+    if (equipment.siteId || equipment.site_id) {
+      const originalSiteId = equipment.siteId || equipment.site_id;
+      
+      // Vérifier si cet ID est dans notre mapping
+      if (siteIdMapping[originalSiteId]) {
+        siteId = siteIdMapping[originalSiteId];
+      } else {
+        // Si l'ID fourni est un UUID valide, l'utiliser directement
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(originalSiteId)) {
+          siteId = originalSiteId;
+        } else {
+          // Sinon, utiliser le premier site disponible
+          siteId = await getFirstSiteId();
+        }
+      }
+    } else {
+      // Si aucun siteId n'est spécifié, utiliser le premier site disponible
+      siteId = await getFirstSiteId();
+    }
     
     // Convert camelCase to snake_case for database compatibility
     const equipmentData = {
       id: validId,
       name: equipment.name,
-      site_id: validSiteId,
+      site_id: siteId,
       type: equipment.type,
       model: equipment.model || "",
       manufacturer: equipment.manufacturer || "",
@@ -275,6 +338,8 @@ const saveEquipment = async (equipment: any, results: any) => {
       status: equipment.status || "active",
       netbios: equipment.netbios || ""
     };
+    
+    console.log("Saving equipment with data:", equipmentData);
     
     const { error } = await supabase
       .from('equipment')
@@ -288,16 +353,38 @@ const saveEquipment = async (equipment: any, results: any) => {
   }
 };
 
-const saveConnection = async (connection: any, results: any) => {
+const saveConnection = async (connection: any, results: any, siteIdMapping: Record<string, string>) => {
   try {
     // Générer un UUID valide
     const validId = getValidUUID(connection.id);
-    const validSiteId = getValidUUID(connection.siteId || connection.site_id);
+    
+    // Récupérer le site ID mappé ou utiliser le premier site disponible
+    let siteId = null;
+    
+    if (connection.siteId || connection.site_id) {
+      const originalSiteId = connection.siteId || connection.site_id;
+      
+      // Vérifier si cet ID est dans notre mapping
+      if (siteIdMapping[originalSiteId]) {
+        siteId = siteIdMapping[originalSiteId];
+      } else {
+        // Si l'ID fourni est un UUID valide, l'utiliser directement
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(originalSiteId)) {
+          siteId = originalSiteId;
+        } else {
+          // Sinon, utiliser le premier site disponible
+          siteId = await getFirstSiteId();
+        }
+      }
+    } else {
+      // Si aucun siteId n'est spécifié, utiliser le premier site disponible
+      siteId = await getFirstSiteId();
+    }
     
     // Convert camelCase to snake_case for database compatibility
     const connectionData = {
       id: validId,
-      site_id: validSiteId,
+      site_id: siteId,
       type: connection.type || "other",
       provider: connection.provider || "",
       contract_ref: connection.contractRef || connection.contract_ref || "",
@@ -318,16 +405,38 @@ const saveConnection = async (connection: any, results: any) => {
   }
 };
 
-const saveIPRange = async (ipRange: any, results: any) => {
+const saveIPRange = async (ipRange: any, results: any, siteIdMapping: Record<string, string>) => {
   try {
     // Générer un UUID valide
     const validId = getValidUUID(ipRange.id);
-    const validSiteId = getValidUUID(ipRange.siteId || ipRange.site_id);
+    
+    // Récupérer le site ID mappé ou utiliser le premier site disponible
+    let siteId = null;
+    
+    if (ipRange.siteId || ipRange.site_id) {
+      const originalSiteId = ipRange.siteId || ipRange.site_id;
+      
+      // Vérifier si cet ID est dans notre mapping
+      if (siteIdMapping[originalSiteId]) {
+        siteId = siteIdMapping[originalSiteId];
+      } else {
+        // Si l'ID fourni est un UUID valide, l'utiliser directement
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(originalSiteId)) {
+          siteId = originalSiteId;
+        } else {
+          // Sinon, utiliser le premier site disponible
+          siteId = await getFirstSiteId();
+        }
+      }
+    } else {
+      // Si aucun siteId n'est spécifié, utiliser le premier site disponible
+      siteId = await getFirstSiteId();
+    }
     
     // Convert camelCase to snake_case for database compatibility
     const ipRangeData = {
       id: validId,
-      site_id: validSiteId,
+      site_id: siteId,
       range: ipRange.range || "",
       description: ipRange.description || "",
       is_reserved: ipRange.isReserved || ipRange.is_reserved || false,
