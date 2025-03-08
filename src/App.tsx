@@ -14,6 +14,7 @@ import EquipmentDetail from "./pages/EquipmentDetail";
 import EditSite from "./pages/EditSite";
 import Auth from "./pages/Auth";
 import MainLayout from "./components/layout/MainLayout";
+import Equipment from "./pages/Equipment";
 
 function App() {
   return (
@@ -77,6 +78,14 @@ function AppContent() {
         element={
           <PrivateRoute>
             <EditSite />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/equipment"
+        element={
+          <PrivateRoute>
+            <Equipment />
           </PrivateRoute>
         }
       />
