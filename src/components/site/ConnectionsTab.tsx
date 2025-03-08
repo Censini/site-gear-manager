@@ -37,7 +37,7 @@ const ConnectionsTab = ({ connections, onRefresh }: ConnectionsTabProps) => {
   const handleRemoveFromSite = async (connectionId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent navigation when clicking the remove button
     
-    if (confirm("Are you sure you want to remove this connection from the site?")) {
+    if (confirm("Êtes-vous sûr de vouloir retirer cette connexion du site ?")) {
       setRemovingId(connectionId);
       
       try {
@@ -48,13 +48,13 @@ const ConnectionsTab = ({ connections, onRefresh }: ConnectionsTabProps) => {
           
         if (error) throw error;
         
-        toast.success("Connection removed from site");
+        toast.success("Connexion retirée du site");
         
         // Refresh the data
         if (onRefresh) await onRefresh();
       } catch (error) {
-        console.error("Error removing connection from site:", error);
-        toast.error("Failed to remove connection from site");
+        console.error("Erreur lors du retrait de la connexion du site:", error);
+        toast.error("Échec du retrait de la connexion du site");
       } finally {
         setRemovingId(null);
       }
@@ -62,7 +62,7 @@ const ConnectionsTab = ({ connections, onRefresh }: ConnectionsTabProps) => {
   };
 
   const handleDeleteConnection = async (connectionId: string) => {
-    console.log("Deleting connection with ID:", connectionId);
+    console.log("Suppression de la connexion avec l'ID:", connectionId);
     setDeletingId(connectionId);
     
     try {
@@ -72,17 +72,17 @@ const ConnectionsTab = ({ connections, onRefresh }: ConnectionsTabProps) => {
         .eq("id", connectionId);
         
       if (error) {
-        console.error("Error deleting connection:", error);
+        console.error("Erreur lors de la suppression de la connexion:", error);
         throw error;
       }
       
-      toast.success("Connection deleted successfully");
+      toast.success("Connexion supprimée avec succès");
       
       // Refresh the data
       if (onRefresh) await onRefresh();
     } catch (error) {
-      console.error("Error in handleDeleteConnection:", error);
-      toast.error("Failed to delete connection");
+      console.error("Erreur dans handleDeleteConnection:", error);
+      toast.error("Échec de la suppression de la connexion");
     } finally {
       setDeletingId(null);
     }
@@ -93,10 +93,10 @@ const ConnectionsTab = ({ connections, onRefresh }: ConnectionsTabProps) => {
       <TableHeader>
         <TableRow>
           <TableHead>Type</TableHead>
-          <TableHead>Provider</TableHead>
-          <TableHead>Contract Ref</TableHead>
-          <TableHead>Bandwidth</TableHead>
-          <TableHead>Status</TableHead>
+          <TableHead>Fournisseur</TableHead>
+          <TableHead>Réf. Contrat</TableHead>
+          <TableHead>Bande passante</TableHead>
+          <TableHead>Statut</TableHead>
           <TableHead className="w-[150px]">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -128,7 +128,7 @@ const ConnectionsTab = ({ connections, onRefresh }: ConnectionsTabProps) => {
                   ) : (
                     <Unlink className="h-4 w-4 text-muted-foreground" />
                   )}
-                  <span className="sr-only">Remove from site</span>
+                  <span className="sr-only">Retirer du site</span>
                 </Button>
                 
                 <AlertDialog>
@@ -143,24 +143,24 @@ const ConnectionsTab = ({ connections, onRefresh }: ConnectionsTabProps) => {
                       ) : (
                         <Trash2 className="h-4 w-4" />
                       )}
-                      <span className="sr-only">Delete connection</span>
+                      <span className="sr-only">Supprimer la connexion</span>
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete the connection
-                        and remove it from the system.
+                        Cette action est irréversible. Cela supprimera définitivement la connexion
+                        et la retirera du système.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
                       <AlertDialogAction 
                         onClick={() => handleDeleteConnection(connection.id)} 
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
-                        Delete
+                        Supprimer
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -172,7 +172,7 @@ const ConnectionsTab = ({ connections, onRefresh }: ConnectionsTabProps) => {
         {connections.length === 0 && (
           <TableRow>
             <TableCell colSpan={6} className="h-24 text-center">
-              No connections found.
+              Aucune connexion trouvée.
             </TableCell>
           </TableRow>
         )}

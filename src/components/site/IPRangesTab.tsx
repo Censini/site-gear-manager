@@ -45,10 +45,10 @@ const IPRangesTab = ({ ipRanges, onRefresh }: IPRangesTabProps) => {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>IP Range</TableHead>
+          <TableHead>Plage IP</TableHead>
           <TableHead>Description</TableHead>
-          <TableHead>DHCP Scope</TableHead>
-          <TableHead>Reserved</TableHead>
+          <TableHead>Portée DHCP</TableHead>
+          <TableHead>Réservée</TableHead>
           <TableHead className="w-[120px]">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -57,15 +57,15 @@ const IPRangesTab = ({ ipRanges, onRefresh }: IPRangesTabProps) => {
           <TableRow key={range.id}>
             <TableCell className="font-medium">{range.range}</TableCell>
             <TableCell>{range.description}</TableCell>
-            <TableCell>{range.dhcpScope ? "Yes" : "No"}</TableCell>
-            <TableCell>{range.isReserved ? "Yes" : "No"}</TableCell>
+            <TableCell>{range.dhcpScope ? "Oui" : "Non"}</TableCell>
+            <TableCell>{range.isReserved ? "Oui" : "Non"}</TableCell>
             <TableCell>
               <div className="flex gap-2">
                 <Button 
                   variant="ghost" 
                   size="icon"
                   onClick={() => handleEditRange(range.id)}
-                  title="Edit Range"
+                  title="Modifier la plage"
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -76,27 +76,27 @@ const IPRangesTab = ({ ipRanges, onRefresh }: IPRangesTabProps) => {
                       variant="ghost" 
                       size="icon" 
                       onClick={() => setRangeToDelete(range.id)}
-                      title="Delete Range"
+                      title="Supprimer la plage"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This will permanently delete the IP range "{range.range}".
-                        This action cannot be undone.
+                        Cela supprimera définitivement la plage IP "{range.range}".
+                        Cette action est irréversible.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
                       <AlertDialogAction 
                         onClick={() => handleDeleteRange(range.id)}
                         disabled={isPending}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
-                        Delete
+                        Supprimer
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -108,7 +108,7 @@ const IPRangesTab = ({ ipRanges, onRefresh }: IPRangesTabProps) => {
         {ipRanges.length === 0 && (
           <TableRow>
             <TableCell colSpan={5} className="h-24 text-center">
-              No IP ranges found.
+              Aucune plage IP trouvée.
             </TableCell>
           </TableRow>
         )}

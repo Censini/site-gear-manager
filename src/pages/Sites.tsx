@@ -26,7 +26,7 @@ const Sites = () => {
         
         if (error) throw error;
         
-        console.log("Fetched sites:", data);
+        console.log("Sites récupérés:", data);
         
         return data.map(site => ({
           id: site.id,
@@ -39,11 +39,11 @@ const Sites = () => {
           contactPhone: site.contact_phone || ""
         } as Site));
       } catch (error) {
-        console.error("Error fetching sites:", error);
+        console.error("Erreur lors de la récupération des sites:", error);
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "Failed to load sites. Please try again later.",
+          title: "Erreur",
+          description: "Impossible de charger les sites. Veuillez réessayer plus tard.",
         });
         return [];
       }
@@ -80,7 +80,7 @@ const Sites = () => {
           onClick={() => navigate("/sites/add")}
         >
           <Plus className="h-4 w-4" />
-          <span>Add Site</span>
+          <span>Ajouter un Site</span>
         </Button>
       </div>
       

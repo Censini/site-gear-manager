@@ -28,12 +28,12 @@ const Settings = () => {
       await new Promise(resolve => setTimeout(resolve, 800));
       
       // Save settings logic would go here
-      console.log("Settings saved:", { darkMode: isDarkMode, notifications, autoSave });
+      console.log("Paramètres sauvegardés:", { darkMode: isDarkMode, notifications, autoSave });
       
-      toast.success("Settings saved successfully");
+      toast.success("Paramètres sauvegardés avec succès");
     } catch (error) {
-      console.error("Failed to save settings:", error);
-      toast.error("Failed to save settings");
+      console.error("Échec de la sauvegarde des paramètres:", error);
+      toast.error("Échec de la sauvegarde des paramètres");
     } finally {
       setIsSaving(false);
     }
@@ -42,33 +42,33 @@ const Settings = () => {
   return (
     <div className="container mx-auto py-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Settings</h1>
+        <h1 className="text-3xl font-bold">Paramètres</h1>
         <p className="text-muted-foreground mt-1">
-          Manage your application preferences and account settings
+          Gérez vos préférences d'application et paramètres de compte
         </p>
       </div>
 
       <Tabs defaultValue="general" className="max-w-3xl">
         <TabsList className="mb-4">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="account">Account</TabsTrigger>
+          <TabsTrigger value="general">Général</TabsTrigger>
+          <TabsTrigger value="account">Compte</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
         
         <TabsContent value="general">
           <Card>
             <CardHeader>
-              <CardTitle>General Settings</CardTitle>
+              <CardTitle>Paramètres Généraux</CardTitle>
               <CardDescription>
-                Configure your general application preferences
+                Configurez vos préférences générales d'application
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="dark-mode">Dark Mode</Label>
+                  <Label htmlFor="dark-mode">Mode Sombre</Label>
                   <p className="text-sm text-muted-foreground">
-                    Enable dark mode for the application interface
+                    Activer le mode sombre pour l'interface de l'application
                   </p>
                 </div>
                 <Switch 
@@ -80,9 +80,9 @@ const Settings = () => {
               
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="auto-save">Auto Save</Label>
+                  <Label htmlFor="auto-save">Sauvegarde Automatique</Label>
                   <p className="text-sm text-muted-foreground">
-                    Automatically save changes without confirmation
+                    Sauvegarder automatiquement les modifications sans confirmation
                   </p>
                 </div>
                 <Switch 
@@ -97,10 +97,10 @@ const Settings = () => {
                 disabled={isSaving}
                 className="mt-4"
               >
-                {isSaving ? "Saving..." : (
+                {isSaving ? "Sauvegarde en cours..." : (
                   <>
                     <Save className="mr-2 h-4 w-4" />
-                    Save Settings
+                    Sauvegarder les Paramètres
                   </>
                 )}
               </Button>
@@ -111,14 +111,14 @@ const Settings = () => {
         <TabsContent value="account">
           <Card>
             <CardHeader>
-              <CardTitle>Account Settings</CardTitle>
+              <CardTitle>Paramètres du Compte</CardTitle>
               <CardDescription>
-                Manage your account information and preferences
+                Gérez vos informations de compte et préférences
               </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                Account settings will be implemented in a future update.
+                Les paramètres du compte seront implémentés dans une mise à jour future.
               </p>
             </CardContent>
           </Card>
@@ -127,17 +127,17 @@ const Settings = () => {
         <TabsContent value="notifications">
           <Card>
             <CardHeader>
-              <CardTitle>Notification Settings</CardTitle>
+              <CardTitle>Paramètres de Notification</CardTitle>
               <CardDescription>
-                Configure how you receive notifications
+                Configurez comment vous recevez les notifications
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="enable-notifications">Enable Notifications</Label>
+                  <Label htmlFor="enable-notifications">Activer les Notifications</Label>
                   <p className="text-sm text-muted-foreground">
-                    Receive notifications about important events
+                    Recevoir des notifications concernant les événements importants
                   </p>
                 </div>
                 <Switch 
@@ -152,10 +152,10 @@ const Settings = () => {
                 disabled={isSaving}
                 className="mt-4"
               >
-                {isSaving ? "Saving..." : (
+                {isSaving ? "Sauvegarde en cours..." : (
                   <>
                     <Save className="mr-2 h-4 w-4" />
-                    Save Settings
+                    Sauvegarder les Paramètres
                   </>
                 )}
               </Button>

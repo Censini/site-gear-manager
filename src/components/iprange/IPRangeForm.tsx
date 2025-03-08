@@ -53,7 +53,7 @@ export const IPRangeForm = ({
   const updateIPRange = useUpdateIPRange();
 
   const onSubmit = (data: IPRangeFormValues) => {
-    console.log("Form submitted with values:", data);
+    console.log("Formulaire soumis avec les valeurs:", data);
     
     if (isEditing && ipRangeId) {
       updateIPRange.mutate({
@@ -90,7 +90,7 @@ export const IPRangeForm = ({
             name="range"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>IP Range*</FormLabel>
+                <FormLabel>Plage IP*</FormLabel>
                 <FormControl>
                   <Input placeholder="192.168.1.0/24" {...field} />
                 </FormControl>
@@ -106,7 +106,7 @@ export const IPRangeForm = ({
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Description of this IP range" {...field} />
+                  <Textarea placeholder="Description de cette plage IP" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -126,11 +126,11 @@ export const IPRangeForm = ({
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a site (optional)" />
+                      <SelectValue placeholder="Sélectionner un site (optionnel)" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="none">No site (unassigned)</SelectItem>
+                    <SelectItem value="none">Aucun site (non assigné)</SelectItem>
                     {sitesLoading ? (
                       <div className="flex items-center justify-center p-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -162,7 +162,7 @@ export const IPRangeForm = ({
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>DHCP Scope</FormLabel>
+                    <FormLabel>Portée DHCP</FormLabel>
                   </div>
                 </FormItem>
               )}
@@ -180,7 +180,7 @@ export const IPRangeForm = ({
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>Reserved Range</FormLabel>
+                    <FormLabel>Plage Réservée</FormLabel>
                   </div>
                 </FormItem>
               )}
@@ -194,10 +194,10 @@ export const IPRangeForm = ({
             variant="outline" 
             onClick={onCancel}
           >
-            Cancel
+            Annuler
           </Button>
           <Button type="submit" disabled={isPending}>
-            {isPending ? (isEditing ? "Updating..." : "Adding...") : (isEditing ? "Update IP Range" : "Add IP Range")}
+            {isPending ? (isEditing ? "Mise à jour..." : "Ajout...") : (isEditing ? "Mettre à jour la plage IP" : "Ajouter la plage IP")}
           </Button>
         </div>
       </form>

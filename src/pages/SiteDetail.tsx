@@ -12,8 +12,8 @@ const SiteDetail = () => {
   const navigate = useNavigate();
   
   // More debugging logs
-  console.log("Site ID from URL:", id);
-  console.log("Site ID type:", typeof id);
+  console.log("ID du site depuis l'URL:", id);
+  console.log("Type d'ID du site:", typeof id);
   
   // Use our custom hook to fetch all site data
   const { 
@@ -33,7 +33,7 @@ const SiteDetail = () => {
       await deleteSite();
       // Navigation is now handled inside the deleteSite function
     } catch (error) {
-      console.error("Error in handleDeleteSite:", error);
+      console.error("Erreur dans handleDeleteSite:", error);
       // Errors are already handled inside deleteSite
     }
   };
@@ -51,9 +51,9 @@ const SiteDetail = () => {
   if (error || !site) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh]">
-        <h2 className="text-2xl font-bold">Site not found</h2>
-        <p className="text-muted-foreground mb-4">The site you're looking for doesn't exist.</p>
-        <Button onClick={() => navigate("/sites")}>Go back to Sites</Button>
+        <h2 className="text-2xl font-bold">Site non trouvé</h2>
+        <p className="text-muted-foreground mb-4">Le site que vous recherchez n'existe pas.</p>
+        <Button onClick={() => navigate("/sites")}>Retour aux Sites</Button>
       </div>
     );
   }

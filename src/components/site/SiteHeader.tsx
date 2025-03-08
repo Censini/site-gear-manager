@@ -29,7 +29,7 @@ const SiteHeader = ({ site, onDelete }: SiteHeaderProps) => {
       await onDelete();
       // Navigation is now handled inside the onDelete function
     } catch (error) {
-      console.error("Error in handleDelete:", error);
+      console.error("Erreur dans handleDelete:", error);
       // Errors are already handled inside onDelete
     }
   };
@@ -53,31 +53,31 @@ const SiteHeader = ({ site, onDelete }: SiteHeaderProps) => {
           onClick={() => navigate(`/sites/edit/${site.id}`)}
         >
           <Edit className="h-4 w-4" />
-          <span>Edit</span>
+          <span>Modifier</span>
         </Button>
         
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="destructive" className="flex items-center gap-1 flex-1 md:flex-none">
               <Trash2 className="h-4 w-4" />
-              <span>Delete</span>
+              <span>Supprimer</span>
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the site
-                "{site.name}" and all associated data.
+                Cette action est irréversible. Cela supprimera définitivement le site
+                "{site.name}" et toutes les données associées.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
               <AlertDialogAction 
                 onClick={handleDelete} 
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                Delete
+                Supprimer
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

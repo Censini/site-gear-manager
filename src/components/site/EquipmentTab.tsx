@@ -16,10 +16,10 @@ const EquipmentTab = ({ equipment }: EquipmentTabProps) => {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Name</TableHead>
+          <TableHead>Nom</TableHead>
           <TableHead>Type</TableHead>
-          <TableHead>IP Address</TableHead>
-          <TableHead>Status</TableHead>
+          <TableHead>Adresse IP</TableHead>
+          <TableHead>Statut</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -45,7 +45,7 @@ const EquipmentTab = ({ equipment }: EquipmentTabProps) => {
         {equipment.length === 0 && (
           <TableRow>
             <TableCell colSpan={4} className="h-24 text-center">
-              No equipment found.
+              Aucun équipement trouvé.
             </TableCell>
           </TableRow>
         )}

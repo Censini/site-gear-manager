@@ -40,7 +40,7 @@ const Sidebar = () => {
       {/* Logo ou titre */}
       <div className="px-5 mb-8">
         <h2 className="text-xl font-semibold text-sidebar-foreground">
-          Inventaire Réseau
+          SAMAT IT
         </h2>
       </div>
       

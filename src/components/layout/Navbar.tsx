@@ -63,8 +63,8 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
           </Sheet>
         )}
         <div className="flex items-center space-x-2">
-          <img src="/lovable-uploads/3894b93e-3829-4eae-a0e3-bcf4c74b9a99.png" alt="Logo" className="h-8 w-auto" />
-          <h1 className="text-xl font-bold">Network Asset Inventory</h1>
+          <img src="/lovable-uploads/74720a9a-74a3-4007-af60-86f883d97445.png" alt="Logo SAMAT IT" className="h-8 w-auto" />
+          <h1 className="text-xl font-bold">SAMAT IT</h1>
         </div>
       </div>
       <div className="flex items-center space-x-2">
