@@ -22,6 +22,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
+// Define the schema to ensure all required fields are present
 const IPRangeSchema = z.object({
   range: z.string().min(1, "IP range is required"),
   description: z.string().optional(),
@@ -74,7 +75,14 @@ const AddIPRange = () => {
 
   const onSubmit = (data: IPRangeFormValues) => {
     console.log("Form submitted with values:", data);
-    addIPRange.mutate(data, {
+    // We need to ensure all required fields are present
+    addIPRange.mutate({
+      range: data.range, // This is required
+      description: data.description,
+      isReserved: data.isReserved,
+      dhcpScope: data.dhcpScope,
+      siteId: data.siteId // This is required
+    }, {
       onSuccess: () => {
         // Navigate back to site detail if siteId is provided, otherwise to IPAM
         if (data.siteId) {
