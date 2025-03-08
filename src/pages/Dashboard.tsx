@@ -16,6 +16,7 @@ const Dashboard = () => {
   const [sites, setSites] = useState<any[]>([]);
   const [connections, setConnections] = useState<any[]>([]);
   const [providers, setProviders] = useState<{name: string, count: number}[]>([]);
+  const [siteContacts, setSiteContacts] = useState<{name: string, phone: string, site: string}[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     totalSites: 0,
     totalEquipment: 0,
@@ -71,6 +72,18 @@ const Dashboard = () => {
         setEquipment(equipmentData || []);
         setSites(sitesData || []);
         setConnections(connectionsData || []);
+        
+        // Extract contacts information from sites
+        const contactsList = sitesData
+          ?.filter(site => site.contact_name && site.contact_phone)
+          .map(site => ({
+            name: site.contact_name || '',
+            phone: site.contact_phone || '',
+            site: site.name
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+          
+        setSiteContacts(contactsList || []);
         
         // Calculate providers statistics
         const providerCounts = connectionsData?.reduce((acc: Record<string, number>, conn: any) => {
@@ -195,88 +208,126 @@ const Dashboard = () => {
         />
       </div>
 
-      <div className="dashboard-charts">
-        <StatusChart stats={stats} />
-        <TypeChart stats={stats} />
-      </div>
-
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="dashboard-table">
-          <CardHeader>
-            <CardTitle>Équipements avec Problèmes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Adresse IP</TableHead>
-                  <TableHead>Site</TableHead>
-                  <TableHead>Statut</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {equipmentWithIssues.length > 0 ? (
-                  equipmentWithIssues.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell>{item.ip_address}</TableCell>
-                      <TableCell>
-                        {sites.find((site) => site.id === item.site_id)?.name || "Non assigné"}
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={item.status} />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
-                      Aucun équipement avec problèmes trouvé.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <div className="md:col-span-2 lg:col-span-1">
+          <div className="dashboard-charts">
+            <StatusChart stats={stats} />
+            <TypeChart stats={stats} />
+          </div>
+        </div>
         
-        <Card className="dashboard-table">
-          <CardHeader>
-            <CardTitle>Fournisseurs de Liens Internet</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fournisseur</TableHead>
-                  <TableHead>Nombre de connexions</TableHead>
-                  <TableHead>Pourcentage</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {providers.length > 0 ? (
-                  providers.map((provider, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{provider.name}</TableCell>
-                      <TableCell>{provider.count}</TableCell>
-                      <TableCell>
-                        {Math.round((provider.count / connections.length) * 100)}%
+        <div className="space-y-6">
+          <Card className="dashboard-table">
+            <CardHeader>
+              <CardTitle>Contacts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nom</TableHead>
+                    <TableHead>Téléphone</TableHead>
+                    <TableHead>Site</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {siteContacts.length > 0 ? (
+                    siteContacts.map((contact, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{contact.name}</TableCell>
+                        <TableCell>{contact.phone}</TableCell>
+                        <TableCell>{contact.site}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={3} className="h-24 text-center">
+                        Aucun contact trouvé.
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+          
+          <Card className="dashboard-table">
+            <CardHeader>
+              <CardTitle>Équipements avec Problèmes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={3} className="h-24 text-center">
-                      Aucun fournisseur de liens internet trouvé.
+                    <TableHead>Nom</TableHead>
+                    <TableHead>Adresse IP</TableHead>
+                    <TableHead>Site</TableHead>
+                    <TableHead>Statut</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {equipmentWithIssues.length > 0 ? (
+                    equipmentWithIssues.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell>{item.ip_address}</TableCell>
+                        <TableCell>
+                          {sites.find((site) => site.id === item.site_id)?.name || "Non assigné"}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={item.status} />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center">
+                        Aucun équipement avec problèmes trouvé.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      
+      <Card className="dashboard-table">
+        <CardHeader>
+          <CardTitle>Fournisseurs de Liens Internet</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Fournisseur</TableHead>
+                <TableHead>Nombre de connexions</TableHead>
+                <TableHead>Pourcentage</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {providers.length > 0 ? (
+                providers.map((provider, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">{provider.name}</TableCell>
+                    <TableCell>{provider.count}</TableCell>
+                    <TableCell>
+                      {Math.round((provider.count / connections.length) * 100)}%
                     </TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={3} className="h-24 text-center">
+                    Aucun fournisseur de liens internet trouvé.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };
