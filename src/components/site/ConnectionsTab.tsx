@@ -3,12 +3,22 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import StatusBadge from "@/components/ui/StatusBadge";
 import { NetworkConnection } from "@/types/types";
 import { Button } from "@/components/ui/button";
-import { Unlink } from "lucide-react";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
+import { Unlink, Trash2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 
 interface ConnectionsTabProps {
   connections: NetworkConnection[];
@@ -18,6 +28,7 @@ interface ConnectionsTabProps {
 const ConnectionsTab = ({ connections, onRefresh }: ConnectionsTabProps) => {
   const navigate = useNavigate();
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleNavigateToConnection = (id: string) => {
     navigate(`/connections/edit/${id}`);
@@ -50,6 +61,33 @@ const ConnectionsTab = ({ connections, onRefresh }: ConnectionsTabProps) => {
     }
   };
 
+  const handleDeleteConnection = async (connectionId: string) => {
+    console.log("Deleting connection with ID:", connectionId);
+    setDeletingId(connectionId);
+    
+    try {
+      const { error } = await supabase
+        .from("network_connections")
+        .delete()
+        .eq("id", connectionId);
+        
+      if (error) {
+        console.error("Error deleting connection:", error);
+        throw error;
+      }
+      
+      toast.success("Connection deleted successfully");
+      
+      // Refresh the data
+      if (onRefresh) await onRefresh();
+    } catch (error) {
+      console.error("Error in handleDeleteConnection:", error);
+      toast.error("Failed to delete connection");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <Table>
       <TableHeader>
@@ -59,7 +97,7 @@ const ConnectionsTab = ({ connections, onRefresh }: ConnectionsTabProps) => {
           <TableHead>Contract Ref</TableHead>
           <TableHead>Bandwidth</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead className="w-[100px]"></TableHead>
+          <TableHead className="w-[150px]">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -77,20 +115,57 @@ const ConnectionsTab = ({ connections, onRefresh }: ConnectionsTabProps) => {
               <StatusBadge status={connection.status} />
             </TableCell>
             <TableCell>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => handleRemoveFromSite(connection.id, e)}
-                disabled={removingId === connection.id}
-                className="h-8 w-8 p-0"
-              >
-                {removingId === connection.id ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Unlink className="h-4 w-4 text-muted-foreground" />
-                )}
-                <span className="sr-only">Remove from site</span>
-              </Button>
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => handleRemoveFromSite(connection.id, e)}
+                  disabled={removingId === connection.id}
+                  className="h-8 w-8 p-0"
+                >
+                  {removingId === connection.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Unlink className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <span className="sr-only">Remove from site</span>
+                </Button>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                    >
+                      {deletingId === connection.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                      <span className="sr-only">Delete connection</span>
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the connection
+                        and remove it from the system.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => handleDeleteConnection(connection.id)} 
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </TableCell>
           </TableRow>
         ))}
