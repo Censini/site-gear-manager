@@ -8,9 +8,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import StatusBadge from "@/components/ui/StatusBadge";
 import EquipmentTypeIcon from "@/components/ui/EquipmentTypeIcon";
-import { ArrowLeft, Edit, Building, Mail, MapPin, Phone, Loader2 } from "lucide-react";
+import { ArrowLeft, Edit, Building, Mail, MapPin, Phone, Loader2, Trash2 } from "lucide-react";
 import { Equipment, NetworkConnection, IPRange } from "@/types/types";
 import { toast } from "sonner";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -181,6 +192,30 @@ const SiteDetail = () => {
     }
   });
 
+  // Function to handle site deletion
+  const deleteSite = async () => {
+    if (!id) return;
+    
+    try {
+      const { error } = await supabase
+        .from("sites")
+        .delete()
+        .eq("id", id);
+      
+      if (error) {
+        console.error("Error deleting site:", error);
+        toast.error("Failed to delete site");
+        return;
+      }
+      
+      toast.success("Site deleted successfully");
+      navigate("/sites");
+    } catch (error) {
+      console.error("Error in delete operation:", error);
+      toast.error("An error occurred while deleting the site");
+    }
+  };
+
   // Show loading state
   if (isLoadingSite || isLoadingEquipment || isLoadingConnections || isLoadingIPRanges) {
     return (
@@ -214,10 +249,36 @@ const SiteDetail = () => {
           </Button>
           <h1 className="text-3xl font-bold tracking-tight">{site.name}</h1>
         </div>
-        <Button variant="outline" className="flex items-center gap-1 w-full md:w-auto">
-          <Edit className="h-4 w-4" />
-          <span>Edit</span>
-        </Button>
+        <div className="flex gap-2 w-full md:w-auto">
+          <Button variant="outline" className="flex items-center gap-1 flex-1 md:flex-none" onClick={() => navigate(`/sites/edit/${id}`)}>
+            <Edit className="h-4 w-4" />
+            <span>Edit</span>
+          </Button>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="flex items-center gap-1 flex-1 md:flex-none">
+                <Trash2 className="h-4 w-4" />
+                <span>Delete</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the site
+                  "{site.name}" and all associated data.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={deleteSite} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
       
       <div className="grid gap-6 md:grid-cols-3">
