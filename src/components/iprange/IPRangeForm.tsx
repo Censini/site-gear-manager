@@ -44,7 +44,7 @@ export const IPRangeForm = ({
       description: "",
       isReserved: false,
       dhcpScope: false,
-      siteId: defaultSiteId
+      siteId: defaultSiteId || null
     }
   });
 
@@ -61,7 +61,7 @@ export const IPRangeForm = ({
         ...data
       }, {
         onSuccess: () => {
-          onSuccess(data.siteId);
+          onSuccess(data.siteId || "");
         }
       });
     } else {
@@ -70,10 +70,10 @@ export const IPRangeForm = ({
         description: data.description,
         isReserved: data.isReserved,
         dhcpScope: data.dhcpScope,
-        siteId: data.siteId
+        siteId: data.siteId || null
       }, {
         onSuccess: () => {
-          onSuccess(data.siteId);
+          onSuccess(data.siteId || "");
         }
       });
     }
@@ -118,18 +118,19 @@ export const IPRangeForm = ({
             name="siteId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Site*</FormLabel>
+                <FormLabel>Site</FormLabel>
                 <Select 
-                  value={field.value} 
-                  onValueChange={field.onChange}
+                  value={field.value || ""} 
+                  onValueChange={(value) => field.onChange(value === "" ? null : value)}
                   disabled={sitesLoading}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a site" />
+                      <SelectValue placeholder="Select a site (optional)" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    <SelectItem value="">No site (unassigned)</SelectItem>
                     {sitesLoading ? (
                       <div className="flex items-center justify-center p-2">
                         <Loader2 className="h-4 w-4 animate-spin" />

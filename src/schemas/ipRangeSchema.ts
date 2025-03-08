@@ -13,7 +13,7 @@ export const IPRangeSchema = z.object({
   description: z.string().optional(),
   isReserved: z.boolean().default(false),
   dhcpScope: z.boolean().default(false),
-  siteId: z.string().min(1, "Site selection is required")
+  siteId: z.string().optional().nullable()
 });
 
 export type IPRangeFormValues = z.infer<typeof IPRangeSchema>;

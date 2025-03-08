@@ -9,7 +9,7 @@ export interface AddIPRangeParams {
   description?: string;
   isReserved: boolean;
   dhcpScope: boolean;
-  siteId: string;
+  siteId: string | null;
 }
 
 export const useAddIPRange = () => {

@@ -86,19 +86,19 @@ const SelectExistingIPRange = ({ siteId, onCancel, onSuccess }: SelectExistingIP
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">Assign Existing IP Range</h3>
+      <h3 className="text-lg font-medium">Assigner un range IP existant</h3>
       
       {ipRanges.length === 0 ? (
-        <p className="text-muted-foreground">No unassigned IP ranges available.</p>
+        <p className="text-muted-foreground">Aucun range IP non-assigné disponible.</p>
       ) : (
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="w-12"></TableHead>
-              <TableHead>IP Range</TableHead>
+              <TableHead>Range IP</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>DHCP Scope</TableHead>
-              <TableHead>Reserved</TableHead>
+              <TableHead>Réservé</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -118,8 +118,8 @@ const SelectExistingIPRange = ({ siteId, onCancel, onSuccess }: SelectExistingIP
                 </TableCell>
                 <TableCell className="font-medium">{range.range}</TableCell>
                 <TableCell>{range.description}</TableCell>
-                <TableCell>{range.dhcpScope ? "Yes" : "No"}</TableCell>
-                <TableCell>{range.isReserved ? "Yes" : "No"}</TableCell>
+                <TableCell>{range.dhcpScope ? "Oui" : "Non"}</TableCell>
+                <TableCell>{range.isReserved ? "Oui" : "Non"}</TableCell>
               </TableRow>
             ))}
           </TableBody>

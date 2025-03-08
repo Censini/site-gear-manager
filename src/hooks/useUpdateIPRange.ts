@@ -22,7 +22,7 @@ export const useUpdateIPRange = () => {
           description: data.description || null,
           is_reserved: data.isReserved,
           dhcp_scope: data.dhcpScope,
-          site_id: data.siteId,
+          site_id: data.siteId || null,
           updated_at: new Date().toISOString()
         })
         .eq("id", data.id)
