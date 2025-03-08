@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +19,7 @@ import EquipmentTypeIcon from "@/components/ui/EquipmentTypeIcon";
 import { ArrowLeft, Edit, Trash2, Loader2 } from "lucide-react";
 import { Equipment } from "@/types/types";
 import { useToast } from "@/hooks/use-toast";
+import ConfigMarkdownViewer from "@/components/equipment/ConfigMarkdownViewer";
 
 const EquipmentDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -54,7 +54,8 @@ const EquipmentDetail = () => {
         firmware: data.firmware || "",
         installDate: data.install_date || "",
         status: data.status,
-        netbios: data.netbios || ""
+        netbios: data.netbios || "",
+        configMarkdown: data.config_markdown || ""
       } as Equipment;
     }
   });
@@ -83,6 +84,45 @@ const EquipmentDetail = () => {
       };
     }
   });
+
+  const saveConfigMutation = useMutation({
+    mutationFn: async (config: string) => {
+      if (!id) throw new Error("ID d'équipement non fourni");
+      
+      const { error } = await supabase
+        .from("equipment")
+        .update({
+          config_markdown: config,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", id);
+      
+      if (error) throw error;
+      
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["equipment", id] });
+      toast({
+        title: "Configuration enregistrée",
+        description: "La configuration de l'équipement a été mise à jour avec succès.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error saving config:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error instanceof Error 
+          ? error.message 
+          : "Une erreur s'est produite lors de l'enregistrement de la configuration.",
+      });
+    }
+  });
+
+  const handleSaveConfig = async (config: string) => {
+    return saveConfigMutation.mutateAsync(config);
+  };
 
   const handleEdit = () => {
     navigate(`/equipment/edit/${id}`);
@@ -140,6 +180,8 @@ const EquipmentDetail = () => {
     );
   }
 
+  const canHaveConfig = ['switch', 'router', 'wifi'];
+  
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -252,6 +294,14 @@ const EquipmentDetail = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {canHaveConfig.includes(equipment.type) && (
+        <ConfigMarkdownViewer 
+          initialConfig={equipment.configMarkdown || ''} 
+          equipmentId={id || ''} 
+          onSave={handleSaveConfig}
+        />
+      )}
       
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>

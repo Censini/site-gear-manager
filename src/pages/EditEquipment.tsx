@@ -37,7 +37,8 @@ const EditEquipment = () => {
         firmware: data.firmware || "",
         installDate: data.install_date || "",
         status: data.status,
-        netbios: data.netbios || ""
+        netbios: data.netbios || "",
+        configMarkdown: data.config_markdown || ""
       } as Equipment;
     }
   });
@@ -70,7 +71,8 @@ const EditEquipment = () => {
     firmware: equipment.firmware,
     status: equipment.status,
     netbios: equipment.netbios || "",
-    siteId: equipment.siteId
+    siteId: equipment.siteId,
+    configMarkdown: equipment.configMarkdown || ""
   };
 
   return (

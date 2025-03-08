@@ -38,7 +38,8 @@ const EquipmentPage = () => {
         firmware: item.firmware || "",
         installDate: item.install_date || "",
         status: item.status,
-        netbios: item.netbios || ""
+        netbios: item.netbios || "",
+        configMarkdown: item.config_markdown || ""
       })) as Equipment[];
     }
   });
