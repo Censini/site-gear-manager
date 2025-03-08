@@ -17,18 +17,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2 } from "lucide-react";
 import { IPRangeSchema, IPRangeFormValues } from "@/schemas/ipRangeSchema";
 import { useAddIPRange } from "@/hooks/useAddIPRange";
+import { useUpdateIPRange } from "@/hooks/useUpdateIPRange";
 import { useGetSitesForSelect } from "@/hooks/useGetSitesForSelect";
 
 interface IPRangeFormProps {
+  isEditing?: boolean;
+  ipRangeId?: string;
+  defaultValues?: IPRangeFormValues;
   defaultSiteId?: string;
   onCancel: () => void;
   onSuccess: (siteId: string) => void;
 }
 
-export const IPRangeForm = ({ defaultSiteId = "", onCancel, onSuccess }: IPRangeFormProps) => {
+export const IPRangeForm = ({ 
+  isEditing = false, 
+  ipRangeId = "", 
+  defaultValues, 
+  defaultSiteId = "", 
+  onCancel, 
+  onSuccess 
+}: IPRangeFormProps) => {
   const form = useForm<IPRangeFormValues>({
     resolver: zodResolver(IPRangeSchema),
-    defaultValues: {
+    defaultValues: defaultValues || {
       range: "",
       description: "",
       isReserved: false,
@@ -39,22 +50,36 @@ export const IPRangeForm = ({ defaultSiteId = "", onCancel, onSuccess }: IPRange
 
   const { data: sites = [], isLoading: sitesLoading } = useGetSitesForSelect();
   const addIPRange = useAddIPRange();
+  const updateIPRange = useUpdateIPRange();
 
   const onSubmit = (data: IPRangeFormValues) => {
     console.log("Form submitted with values:", data);
-    // We need to ensure all required fields are present
-    addIPRange.mutate({
-      range: data.range, // This is required
-      description: data.description,
-      isReserved: data.isReserved,
-      dhcpScope: data.dhcpScope,
-      siteId: data.siteId // This is required
-    }, {
-      onSuccess: () => {
-        onSuccess(data.siteId);
-      }
-    });
+    
+    if (isEditing && ipRangeId) {
+      updateIPRange.mutate({
+        id: ipRangeId,
+        ...data
+      }, {
+        onSuccess: () => {
+          onSuccess(data.siteId);
+        }
+      });
+    } else {
+      addIPRange.mutate({
+        range: data.range,
+        description: data.description,
+        isReserved: data.isReserved,
+        dhcpScope: data.dhcpScope,
+        siteId: data.siteId
+      }, {
+        onSuccess: () => {
+          onSuccess(data.siteId);
+        }
+      });
+    }
   };
+
+  const isPending = isEditing ? updateIPRange.isPending : addIPRange.isPending;
 
   return (
     <Form {...form}>
@@ -170,8 +195,8 @@ export const IPRangeForm = ({ defaultSiteId = "", onCancel, onSuccess }: IPRange
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={addIPRange.isPending}>
-            {addIPRange.isPending ? "Adding..." : "Add IP Range"}
+          <Button type="submit" disabled={isPending}>
+            {isPending ? (isEditing ? "Updating..." : "Adding...") : (isEditing ? "Update IP Range" : "Add IP Range")}
           </Button>
         </div>
       </form>

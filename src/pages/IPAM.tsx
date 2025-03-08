@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Loader2 } from "lucide-react";
+import { Search, Plus, Loader2, Pencil } from "lucide-react";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGetIPRanges } from "@/hooks/useGetIPRanges";
@@ -40,6 +40,10 @@ const IPAM = () => {
 
   const handleAddRange = () => {
     navigate("/ipam/add");
+  };
+
+  const handleEditRange = (id: string) => {
+    navigate(`/ipam/edit/${id}`);
   };
 
   return (
@@ -103,6 +107,7 @@ const IPAM = () => {
                       <TableHead>Description</TableHead>
                       <TableHead>DHCP Scope</TableHead>
                       <TableHead>Reserved</TableHead>
+                      <TableHead className="w-[80px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -113,11 +118,21 @@ const IPAM = () => {
                         <TableCell>{range.description || "—"}</TableCell>
                         <TableCell>{range.dhcpScope ? "Yes" : "No"}</TableCell>
                         <TableCell>{range.isReserved ? "Yes" : "No"}</TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleEditRange(range.id)}
+                            title="Edit Range"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                     {filteredRanges.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
+                        <TableCell colSpan={6} className="h-24 text-center">
                           No IP ranges found.
                         </TableCell>
                       </TableRow>

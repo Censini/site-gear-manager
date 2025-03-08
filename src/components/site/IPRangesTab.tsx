@@ -1,5 +1,8 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Pencil } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { IPRange } from "@/types/types";
 
 interface IPRangesTabProps {
@@ -7,6 +10,12 @@ interface IPRangesTabProps {
 }
 
 const IPRangesTab = ({ ipRanges }: IPRangesTabProps) => {
+  const navigate = useNavigate();
+
+  const handleEditRange = (id: string) => {
+    navigate(`/ipam/edit/${id}`);
+  };
+
   return (
     <Table>
       <TableHeader>
@@ -15,6 +24,7 @@ const IPRangesTab = ({ ipRanges }: IPRangesTabProps) => {
           <TableHead>Description</TableHead>
           <TableHead>DHCP Scope</TableHead>
           <TableHead>Reserved</TableHead>
+          <TableHead className="w-[80px]">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -24,11 +34,21 @@ const IPRangesTab = ({ ipRanges }: IPRangesTabProps) => {
             <TableCell>{range.description}</TableCell>
             <TableCell>{range.dhcpScope ? "Yes" : "No"}</TableCell>
             <TableCell>{range.isReserved ? "Yes" : "No"}</TableCell>
+            <TableCell>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => handleEditRange(range.id)}
+                title="Edit Range"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </TableCell>
           </TableRow>
         ))}
         {ipRanges.length === 0 && (
           <TableRow>
-            <TableCell colSpan={4} className="h-24 text-center">
+            <TableCell colSpan={5} className="h-24 text-center">
               No IP ranges found.
             </TableCell>
           </TableRow>
