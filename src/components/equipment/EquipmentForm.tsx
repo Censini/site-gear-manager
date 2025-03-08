@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { EquipmentType, Status } from "@/types/types";
+import { EquipmentType, Status, Equipment } from "@/types/types";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -25,8 +25,12 @@ interface EquipmentFormProps {
     netbios: string;
     siteId: string;
   };
-  mode: "add" | "edit";
+  mode?: "add" | "edit";
   equipmentId?: string;
+  onSubmit?: (data: any) => void;
+  initialValues?: any;
+  isSubmitting?: boolean;
+  onCancel?: () => void;
 }
 
 const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) => {
