@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Equipment from "./pages/Equipment";
 import EquipmentDetail from "./pages/EquipmentDetail";
 import AddEquipment from "./pages/AddEquipment";
+import EditEquipment from "./pages/EditEquipment";
 import Sites from "./pages/Sites";
 import SiteDetail from "./pages/SiteDetail";
 import IPAM from "./pages/IPAM";
@@ -43,6 +44,11 @@ const App = () => (
               <Route path="/equipment/add" element={
                 <MainLayout>
                   <AddEquipment />
+                </MainLayout>
+              } />
+              <Route path="/equipment/edit/:id" element={
+                <MainLayout>
+                  <EditEquipment />
                 </MainLayout>
               } />
               <Route path="/equipment/:id" element={

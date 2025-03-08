@@ -1,18 +1,20 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { EquipmentType, Status } from "@/types/types";
 import { useAuth } from "@/contexts/AuthContext";
 
-const AddEquipment = () => {
+const EditEquipment = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { session } = useAuth();
@@ -29,7 +31,37 @@ const AddEquipment = () => {
     firmware: "",
     status: "active" as Status,
     netbios: "",
-    siteId: "" // Ajout du champ siteId
+    siteId: ""
+  });
+
+  const { isLoading: isLoadingEquipment, error: equipmentError } = useQuery({
+    queryKey: ["equipment", id],
+    queryFn: async () => {
+      if (!id) throw new Error("No equipment ID provided");
+      
+      const { data, error } = await supabase
+        .from("equipment")
+        .select("*")
+        .eq("id", id)
+        .single();
+      
+      if (error) throw error;
+      
+      setEquipmentData({
+        name: data.name,
+        type: data.type as EquipmentType,
+        model: data.model,
+        manufacturer: data.manufacturer,
+        ipAddress: data.ip_address || "",
+        macAddress: data.mac_address || "",
+        firmware: data.firmware || "",
+        status: data.status as Status,
+        netbios: data.netbios || "",
+        siteId: data.site_id || ""
+      });
+      
+      return data;
+    }
   });
 
   useEffect(() => {
@@ -72,7 +104,11 @@ const AddEquipment = () => {
 
     try {
       if (!session?.user?.id) {
-        throw new Error("Vous devez être connecté pour ajouter un équipement");
+        throw new Error("Vous devez être connecté pour modifier un équipement");
+      }
+
+      if (!id) {
+        throw new Error("ID de l'équipement manquant");
       }
 
       // Convert camelCase to snake_case for Supabase
@@ -86,40 +122,64 @@ const AddEquipment = () => {
         firmware: equipmentData.firmware,
         status: equipmentData.status,
         netbios: equipmentData.netbios,
-        user_id: session.user.id,
-        site_id: equipmentData.siteId || null // Ajout du site_id
+        site_id: equipmentData.siteId || null, // Null if not selected
+        updated_at: new Date().toISOString()
       };
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("equipment")
-        .insert(dbData)
-        .select("id")
-        .single();
+        .update(dbData)
+        .eq("id", id);
 
       if (error) throw error;
 
       toast({
-        title: "Équipement ajouté",
-        description: `${equipmentData.name} a été ajouté avec succès.`,
+        title: "Équipement modifié",
+        description: `${equipmentData.name} a été modifié avec succès.`,
       });
 
-      navigate("/equipment");
+      navigate(`/equipment/${id}`);
     } catch (error) {
-      console.error("Error adding equipment:", error);
+      console.error("Error updating equipment:", error);
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: error instanceof Error ? error.message : "Une erreur s'est produite lors de l'ajout de l'équipement.",
+        description: error instanceof Error ? error.message : "Une erreur s'est produite lors de la modification de l'équipement.",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (isLoadingEquipment) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (equipmentError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh]">
+        <h2 className="text-2xl font-bold">Équipement introuvable</h2>
+        <p className="text-muted-foreground mb-4">L'équipement que vous recherchez n'existe pas.</p>
+        <Button onClick={() => navigate("/equipment")}>Retourner à la liste des équipements</Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Ajouter un équipement</h1>
+      <div className="flex items-center gap-2">
+        <Button 
+          variant="outline" 
+          size="icon"
+          onClick={() => navigate(`/equipment/${id}`)}
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <h1 className="text-3xl font-bold tracking-tight">Modifier l'équipement</h1>
       </div>
 
       <Card>
@@ -127,7 +187,7 @@ const AddEquipment = () => {
           <CardHeader>
             <CardTitle>Détails de l'équipement</CardTitle>
             <CardDescription>
-              Saisissez les informations du nouvel équipement à ajouter à l'inventaire.
+              Modifiez les informations de l'équipement.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -213,7 +273,7 @@ const AddEquipment = () => {
                 <Label htmlFor="status">Statut</Label>
                 <Select
                   value={equipmentData.status}
-                  onValueChange={(value) => handleSelectChange("status", value)}
+                  onValueChange={(value) => handleSelectChange("status", value as Status)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner un statut" />
@@ -276,7 +336,7 @@ const AddEquipment = () => {
             <Button 
               variant="outline" 
               type="button"
-              onClick={() => navigate("/equipment")}
+              onClick={() => navigate(`/equipment/${id}`)}
             >
               Annuler
             </Button>
@@ -287,7 +347,7 @@ const AddEquipment = () => {
                   Enregistrement...
                 </>
               ) : (
-                "Ajouter l'équipement"
+                "Enregistrer les modifications"
               )}
             </Button>
           </CardFooter>
@@ -297,4 +357,4 @@ const AddEquipment = () => {
   );
 };
 
-export default AddEquipment;
+export default EditEquipment;

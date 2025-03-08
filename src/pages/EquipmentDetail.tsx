@@ -1,17 +1,33 @@
 
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import StatusBadge from "@/components/ui/StatusBadge";
 import EquipmentTypeIcon from "@/components/ui/EquipmentTypeIcon";
 import { ArrowLeft, Edit, Trash2, Loader2 } from "lucide-react";
 import { Equipment } from "@/types/types";
+import { useToast } from "@/hooks/use-toast";
 
 const EquipmentDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   const { data: equipment, isLoading, error } = useQuery({
     queryKey: ["equipment", id],
@@ -68,6 +84,44 @@ const EquipmentDetail = () => {
     }
   });
 
+  const handleEdit = () => {
+    navigate(`/equipment/edit/${id}`);
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("equipment")
+        .delete()
+        .eq("id", id);
+      
+      if (error) throw error;
+      
+      queryClient.invalidateQueries({ queryKey: ["equipment"] });
+      toast({
+        title: "Équipement supprimé",
+        description: "L'équipement a été supprimé avec succès.",
+      });
+      
+      navigate("/equipment");
+    } catch (error) {
+      console.error("Error deleting equipment:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error instanceof Error 
+          ? error.message 
+          : "Une erreur s'est produite lors de la suppression de l'équipement.",
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -101,13 +155,27 @@ const EquipmentDetail = () => {
           <StatusBadge status={equipment.status} className="ml-2" />
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="flex items-center gap-1">
+          <Button variant="outline" className="flex items-center gap-1" onClick={handleEdit}>
             <Edit className="h-4 w-4" />
             <span>Edit</span>
           </Button>
-          <Button variant="destructive" className="flex items-center gap-1">
-            <Trash2 className="h-4 w-4" />
-            <span>Delete</span>
+          <Button 
+            variant="destructive" 
+            className="flex items-center gap-1"
+            onClick={() => setShowDeleteDialog(true)}
+            disabled={isDeleting}
+          >
+            {isDeleting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Suppression...</span>
+              </>
+            ) : (
+              <>
+                <Trash2 className="h-4 w-4" />
+                <span>Delete</span>
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -180,6 +248,30 @@ const EquipmentDetail = () => {
           </CardContent>
         </Card>
       </div>
+      
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action ne peut pas être annulée. Cela supprimera définitivement l'équipement <strong>{equipment.name}</strong> de la base de données.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                "Supprimer"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
