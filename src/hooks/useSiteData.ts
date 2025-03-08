@@ -44,8 +44,8 @@ export const useSiteData = (id: string | undefined) => {
   } = useGetSiteIPRanges(id);
   
   // Delete site function
-  const deleteSite = async () => {
-    if (!id) return false;
+  const deleteSite = async (): Promise<void> => {
+    if (!id) return;
     
     setIsDeleting(true);
     try {
@@ -73,12 +73,9 @@ export const useSiteData = (id: string | undefined) => {
       }
       
       toast.success("Site deleted successfully");
-      navigate("/sites"); // Force navigation back to sites
-      return true;
     } catch (error) {
       console.error("Error deleting site:", error);
       toast.error("Failed to delete site");
-      return false;
     } finally {
       setIsDeleting(false);
     }

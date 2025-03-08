@@ -24,11 +24,10 @@ const SiteHeader = ({ site, onDelete }: SiteHeaderProps) => {
   const navigate = useNavigate();
   
   const handleDelete = async () => {
-    const success = await onDelete();
-    if (success) {
-      // Force navigation to sites page after successful deletion
-      navigate("/sites", { replace: true });
-    }
+    await onDelete();
+    // Always navigate after onDelete completes (whether successful or not)
+    // The actual success/error handling should be inside onDelete
+    navigate("/sites", { replace: true });
   };
   
   return (
