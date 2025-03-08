@@ -27,10 +27,15 @@ const SiteDetail = () => {
     refetch 
   } = useSiteData(id);
 
-  // Handle site deletion without checking return value
+  // Handle site deletion
   const handleDeleteSite = async () => {
-    await deleteSite();
-    // Navigation is now handled inside the deleteSite function
+    try {
+      await deleteSite();
+      // Navigation is now handled inside the deleteSite function
+    } catch (error) {
+      console.error("Error in handleDeleteSite:", error);
+      // Errors are already handled inside deleteSite
+    }
   };
 
   // Show loading state
