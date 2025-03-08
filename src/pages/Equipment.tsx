@@ -19,11 +19,11 @@ const EquipmentPage = () => {
         .select("*");
       
       if (error) {
-        console.error("Error fetching equipment:", error);
+        console.error("Erreur lors de la récupération des équipements:", error);
         throw error;
       }
       
-      console.log("Fetched equipment:", data);
+      console.log("Équipements récupérés:", data);
       
       // Transform snake_case database fields to camelCase for our frontend types
       return (data || []).map(item => ({
@@ -68,9 +68,9 @@ const EquipmentPage = () => {
   if (error) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">Equipment Inventory</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Inventaire des équipements</h1>
         <div className="p-4 border border-red-300 bg-red-50 rounded-md text-red-800">
-          Error loading equipment: {error.message}
+          Erreur lors du chargement des équipements : {error.message}
         </div>
       </div>
     );
@@ -78,7 +78,7 @@ const EquipmentPage = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">Equipment Inventory</h1>
+      <h1 className="text-3xl font-bold tracking-tight">Inventaire des équipements</h1>
       
       <EquipmentFilters
         searchTerm={searchTerm}

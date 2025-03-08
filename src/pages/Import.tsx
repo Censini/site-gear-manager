@@ -116,9 +116,9 @@ const Import = () => {
   return (
     <div className="container mx-auto py-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Import Data</h1>
+        <h1 className="text-3xl font-bold">Importer des données</h1>
         <p className="text-muted-foreground mt-1">
-          Import your network data from JSON or CSV files
+          Importez vos données réseau à partir de fichiers JSON ou CSV
         </p>
       </div>
 
@@ -132,7 +132,7 @@ const Import = () => {
                 ) : (
                   <AlertTriangle className="h-5 w-5 text-yellow-500" />
                 )}
-                Import Results
+                Résultats de l'importation
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -140,36 +140,36 @@ const Import = () => {
                 <div className="p-3 bg-muted rounded-md">
                   <h3 className="text-sm font-medium">Sites</h3>
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="text-sm text-green-600">{importResults.sites.success} imported</span>
+                    <span className="text-sm text-green-600">{importResults.sites.success} importés</span>
                     {importResults.sites.error > 0 && (
-                      <span className="text-sm text-red-600">{importResults.sites.error} failed</span>
+                      <span className="text-sm text-red-600">{importResults.sites.error} échoués</span>
                     )}
                   </div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
-                  <h3 className="text-sm font-medium">Equipment</h3>
+                  <h3 className="text-sm font-medium">Équipements</h3>
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="text-sm text-green-600">{importResults.equipment.success} imported</span>
+                    <span className="text-sm text-green-600">{importResults.equipment.success} importés</span>
                     {importResults.equipment.error > 0 && (
-                      <span className="text-sm text-red-600">{importResults.equipment.error} failed</span>
+                      <span className="text-sm text-red-600">{importResults.equipment.error} échoués</span>
                     )}
                   </div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
-                  <h3 className="text-sm font-medium">Connections</h3>
+                  <h3 className="text-sm font-medium">Connexions</h3>
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="text-sm text-green-600">{importResults.connections.success} imported</span>
+                    <span className="text-sm text-green-600">{importResults.connections.success} importées</span>
                     {importResults.connections.error > 0 && (
-                      <span className="text-sm text-red-600">{importResults.connections.error} failed</span>
+                      <span className="text-sm text-red-600">{importResults.connections.error} échouées</span>
                     )}
                   </div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
-                  <h3 className="text-sm font-medium">IP Ranges</h3>
+                  <h3 className="text-sm font-medium">Plages IP</h3>
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="text-sm text-green-600">{importResults.ipRanges.success} imported</span>
+                    <span className="text-sm text-green-600">{importResults.ipRanges.success} importées</span>
                     {importResults.ipRanges.error > 0 && (
-                      <span className="text-sm text-red-600">{importResults.ipRanges.error} failed</span>
+                      <span className="text-sm text-red-600">{importResults.ipRanges.error} échouées</span>
                     )}
                   </div>
                 </div>
@@ -177,7 +177,7 @@ const Import = () => {
               
               <div className="mt-4 flex justify-end">
                 <Button onClick={() => navigate("/sites")} variant="outline">
-                  View Sites
+                  Voir les sites
                 </Button>
               </div>
             </CardContent>
@@ -188,7 +188,7 @@ const Import = () => {
       {isUploading && importProgress > 0 && (
         <div className="mb-6">
           <Alert>
-            <AlertTitle>Importing data...</AlertTitle>
+            <AlertTitle>Importation des données...</AlertTitle>
             <AlertDescription>
               <Progress value={importProgress} className="mt-2" />
             </AlertDescription>
@@ -207,10 +207,10 @@ const Import = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileJson className="h-5 w-5" />
-                Import JSON Data
+                Importer des données JSON
               </CardTitle>
               <CardDescription>
-                Upload a JSON file containing your network data
+                Téléchargez un fichier JSON contenant vos données réseau
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -222,7 +222,7 @@ const Import = () => {
               >
                 <Upload className="h-8 w-8 mx-auto mb-4 text-gray-400" />
                 <p className="mb-4 text-sm text-gray-500">
-                  Drag and drop your JSON file here, or click to browse
+                  Glissez-déposez votre fichier JSON ici, ou cliquez pour parcourir
                 </p>
                 <input
                   type="file"
@@ -237,26 +237,59 @@ const Import = () => {
                   disabled={isUploading}
                   className="mt-2"
                 >
-                  {isUploading ? "Uploading..." : "Select JSON File"}
+                  {isUploading ? "Téléchargement..." : "Sélectionner un fichier JSON"}
                 </Button>
               </div>
               
               <div className="mt-4">
-                <h3 className="text-sm font-medium mb-2">JSON format example:</h3>
+                <h3 className="text-sm font-medium mb-2">Exemple de format JSON :</h3>
                 <div className="bg-muted p-3 rounded-md overflow-x-auto">
                   <pre className="text-xs text-left">
                     {`{
   "sites": [
-    { "id": "uuid", "name": "Site name", "location": "City", ... }
+    { 
+      "name": "Siège social", 
+      "location": "Paris",
+      "country": "France",
+      "address": "123 Avenue de la République", 
+      "contactName": "Jean Dupont",
+      "contactEmail": "jean@example.com",
+      "contactPhone": "01 23 45 67 89"
+    }
   ],
   "equipment": [
-    { "id": "uuid", "name": "Router name", "type": "router", ... }
+    { 
+      "name": "Routeur principal", 
+      "siteId": "Siège social",  // Utilisez le nom du site comme référence
+      "type": "router", 
+      "model": "Cisco 2900",
+      "manufacturer": "Cisco",
+      "ipAddress": "192.168.1.1",
+      "macAddress": "00:11:22:33:44:55",
+      "firmware": "15.1",
+      "installDate": "2023-01-01",
+      "status": "active"
+    }
   ],
   "connections": [
-    { "id": "uuid", "type": "fiber", "provider": "Provider name", ... }
+    {
+      "type": "fiber",
+      "siteId": "Siège social",  // Utilisez le nom du site comme référence
+      "provider": "Orange Business",
+      "contractRef": "OB-12345",
+      "bandwidth": "1 Gbps",
+      "sla": "99.9%",
+      "status": "active"
+    }
   ],
   "ipRanges": [
-    { "id": "uuid", "range": "192.168.1.0/24", ... }
+    {
+      "siteId": "Siège social",  // Utilisez le nom du site comme référence
+      "range": "192.168.1.0/24", 
+      "description": "Réseau local principal",
+      "isReserved": false,
+      "dhcpScope": true
+    }
   ]
 }`}
                   </pre>
@@ -271,10 +304,10 @@ const Import = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileSpreadsheet className="h-5 w-5" />
-                Import CSV Data
+                Importer des données CSV
               </CardTitle>
               <CardDescription>
-                Upload a CSV file containing your network data
+                Téléchargez un fichier CSV contenant vos données réseau
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -286,7 +319,7 @@ const Import = () => {
               >
                 <Upload className="h-8 w-8 mx-auto mb-4 text-gray-400" />
                 <p className="mb-4 text-sm text-gray-500">
-                  Drag and drop your CSV file here, or click to browse
+                  Glissez-déposez votre fichier CSV ici, ou cliquez pour parcourir
                 </p>
                 <input
                   type="file"
@@ -301,15 +334,15 @@ const Import = () => {
                   disabled={isUploading}
                   className="mt-2"
                 >
-                  {isUploading ? "Uploading..." : "Select CSV File"}
+                  {isUploading ? "Téléchargement..." : "Sélectionner un fichier CSV"}
                 </Button>
               </div>
               
               <div className="mt-4">
-                <h3 className="text-sm font-medium mb-2">CSV format note:</h3>
+                <h3 className="text-sm font-medium mb-2">Note sur le format CSV :</h3>
                 <p className="text-sm text-muted-foreground">
-                  Your CSV should include a header row with field names that match the expected data structure.
-                  Include a 'type' column to help identify the type of data (site, equipment, connection, ipRange).
+                  Votre CSV doit inclure une ligne d'en-tête avec des noms de champs qui correspondent à la structure des données attendue.
+                  Incluez une colonne 'type' pour aider à identifier le type de données (site, equipment, connection, ipRange).
                 </p>
               </div>
             </CardContent>

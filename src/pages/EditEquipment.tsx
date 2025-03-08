@@ -15,7 +15,7 @@ const EditEquipment = () => {
   const { data: equipment, isLoading, error } = useQuery({
     queryKey: ["equipment", id],
     queryFn: async () => {
-      if (!id) throw new Error("No equipment ID provided");
+      if (!id) throw new Error("ID d'équipement non fourni");
       
       const { data, error } = await supabase
         .from("equipment")

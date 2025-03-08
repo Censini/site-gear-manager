@@ -1,3 +1,4 @@
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -84,14 +85,14 @@ const Connections = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">Internet Connections</h1>
+      <h1 className="text-3xl font-bold tracking-tight">Connexions Internet</h1>
       
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search connections..."
+            placeholder="Rechercher des connexions..."
             className="pl-8"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -103,21 +104,21 @@ const Connections = () => {
             onValueChange={(value) => setTypeFilter(value)}
           >
             <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Filter by type" />
+              <SelectValue placeholder="Filtrer par type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
-              <SelectItem value="fiber">Fiber</SelectItem>
+              <SelectItem value="all">Tous les types</SelectItem>
+              <SelectItem value="fiber">Fibre</SelectItem>
               <SelectItem value="adsl">ADSL</SelectItem>
               <SelectItem value="sdsl">SDSL</SelectItem>
               <SelectItem value="satellite">Satellite</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
+              <SelectItem value="other">Autre</SelectItem>
             </SelectContent>
           </Select>
           <Button className="flex items-center gap-1" asChild>
             <Link to="/connections/add">
               <Plus className="h-4 w-4" />
-              <span>Add Connection</span>
+              <span>Ajouter une connexion</span>
             </Link>
           </Button>
         </div>
@@ -129,11 +130,11 @@ const Connections = () => {
             <TableRow>
               <TableHead>Site</TableHead>
               <TableHead>Type</TableHead>
-              <TableHead>Provider</TableHead>
-              <TableHead>Contract Ref</TableHead>
-              <TableHead>Bandwidth</TableHead>
+              <TableHead>Fournisseur</TableHead>
+              <TableHead>Référence contrat</TableHead>
+              <TableHead>Bande passante</TableHead>
               <TableHead>SLA</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Statut</TableHead>
               <TableHead className="w-[100px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -141,7 +142,7 @@ const Connections = () => {
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={8} className="h-24 text-center">
-                  Loading connections...
+                  Chargement des connexions...
                 </TableCell>
               </TableRow>
             ) : filteredConnections.length > 0 ? (
@@ -186,19 +187,19 @@ const Connections = () => {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the connection
-                              and remove it from all sites.
+                              Cette action ne peut pas être annulée. Cela supprimera définitivement la connexion
+                              et la retirera de tous les sites.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>Annuler</AlertDialogCancel>
                             <AlertDialogAction 
                               onClick={() => handleDeleteConnection(connection.id)} 
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
-                              Delete
+                              Supprimer
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -210,7 +211,7 @@ const Connections = () => {
             ) : (
               <TableRow>
                 <TableCell colSpan={8} className="h-24 text-center">
-                  No connections found.
+                  Aucune connexion trouvée.
                 </TableCell>
               </TableRow>
             )}
