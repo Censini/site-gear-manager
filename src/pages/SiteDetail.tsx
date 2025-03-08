@@ -23,7 +23,8 @@ const SiteDetail = () => {
     ipRanges, 
     isLoading, 
     error, 
-    deleteSite 
+    deleteSite,
+    refetch 
   } = useSiteData(id);
 
   // Handle site deletion with navigation

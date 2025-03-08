@@ -1,48 +1,90 @@
 
+import { useState } from "react";
 import { useGetSite } from "./useGetSite";
 import { useGetSiteEquipment } from "./useGetSiteEquipment";
 import { useGetSiteConnections } from "./useGetSiteConnections";
 import { useGetSiteIPRanges } from "./useGetSiteIPRanges";
-import { deleteSite as deleteSiteAction } from "@/utils/siteActions";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const useSiteData = (id: string | undefined) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  
   // Fetch site data
   const { 
     data: site, 
     isLoading: isLoadingSite, 
-    error: siteError 
+    error: siteError,
+    refetch: refetchSite
   } = useGetSite(id);
   
-  // Fetch equipment data
+  // Fetch site equipment
   const { 
     data: equipment = [], 
-    isLoading: isLoadingEquipment 
+    isLoading: isLoadingEquipment,
+    refetch: refetchEquipment
   } = useGetSiteEquipment(id);
   
-  // Fetch network connections
+  // Fetch site connections
   const { 
     data: connections = [], 
-    isLoading: isLoadingConnections 
+    isLoading: isLoadingConnections,
+    refetch: refetchConnections
   } = useGetSiteConnections(id);
   
-  // Fetch IP ranges
+  // Fetch site IP ranges
   const { 
     data: ipRanges = [], 
-    isLoading: isLoadingIPRanges 
+    isLoading: isLoadingIPRanges,
+    refetch: refetchIPRanges
   } = useGetSiteIPRanges(id);
-
-  // Delete site function wrapper
+  
+  // Delete site function
   const deleteSite = async () => {
-    return await deleteSiteAction(id);
+    if (!id) return false;
+    
+    setIsDeleting(true);
+    try {
+      // Delete site
+      const { error } = await supabase
+        .from("sites")
+        .delete()
+        .eq("id", id);
+      
+      if (error) throw error;
+      
+      toast.success("Site deleted successfully");
+      return true;
+    } catch (error) {
+      console.error("Error deleting site:", error);
+      toast.error("Failed to delete site");
+      return false;
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
-  return {
-    site,
-    equipment,
-    connections,
-    ipRanges,
-    isLoading: isLoadingSite || isLoadingEquipment || isLoadingConnections || isLoadingIPRanges,
-    error: siteError,
-    deleteSite
+  // Function to refetch all data
+  const refetch = async () => {
+    await Promise.all([
+      refetchSite(),
+      refetchEquipment(),
+      refetchConnections(),
+      refetchIPRanges()
+    ]);
+  };
+  
+  const isLoading = isLoadingSite || isLoadingEquipment || isLoadingConnections || isLoadingIPRanges || isDeleting;
+  const error = siteError;
+  
+  return { 
+    site, 
+    equipment, 
+    connections, 
+    ipRanges, 
+    isLoading, 
+    error, 
+    deleteSite,
+    refetch
   };
 };

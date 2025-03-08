@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import EquipmentTab from "./EquipmentTab";
 import ConnectionsTab from "./ConnectionsTab";
 import IPRangesTab from "./IPRangesTab";
 import { Equipment, NetworkConnection, IPRange } from "@/types/types";
+import SelectExistingEquipment from "../equipment/SelectExistingEquipment";
 
 interface SiteResourcesCardProps {
   siteId: string;
@@ -18,6 +20,7 @@ interface SiteResourcesCardProps {
 
 const SiteResourcesCard = ({ siteId, equipment, connections, ipRanges }: SiteResourcesCardProps) => {
   const navigate = useNavigate();
+  const [showExistingEquipment, setShowExistingEquipment] = useState(false);
   
   const handleAddEquipment = () => {
     navigate(`/equipment/add?siteId=${siteId}`);
@@ -29,6 +32,10 @@ const SiteResourcesCard = ({ siteId, equipment, connections, ipRanges }: SiteRes
   
   const handleAddIPRange = () => {
     navigate(`/ipam/add?siteId=${siteId}`);
+  };
+
+  const handleEquipmentSuccess = () => {
+    setShowExistingEquipment(false);
   };
   
   return (
@@ -46,13 +53,27 @@ const SiteResourcesCard = ({ siteId, equipment, connections, ipRanges }: SiteRes
         </CardHeader>
         <CardContent>
           <TabsContent value="equipment">
-            <div className="mb-4 flex justify-end">
-              <Button onClick={handleAddEquipment} size="sm">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Equipment
-              </Button>
-            </div>
-            <EquipmentTab equipment={equipment} />
+            {showExistingEquipment ? (
+              <SelectExistingEquipment 
+                siteId={siteId} 
+                onCancel={() => setShowExistingEquipment(false)} 
+                onSuccess={handleEquipmentSuccess}
+              />
+            ) : (
+              <>
+                <div className="mb-4 flex justify-end gap-2">
+                  <Button onClick={() => setShowExistingEquipment(true)} size="sm" variant="outline">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Assign Existing
+                  </Button>
+                  <Button onClick={handleAddEquipment} size="sm">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add New
+                  </Button>
+                </div>
+                <EquipmentTab equipment={equipment} />
+              </>
+            )}
           </TabsContent>
           
           <TabsContent value="connections">
