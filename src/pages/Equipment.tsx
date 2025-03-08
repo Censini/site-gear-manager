@@ -3,10 +3,15 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import EquipmentTable from "@/components/equipment/EquipmentTable";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { Equipment } from "@/types/types";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const EquipmentPage = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
   const { data: equipmentList, error, isLoading: isQueryLoading } = useQuery({
@@ -36,6 +41,10 @@ const EquipmentPage = () => {
     }
   });
 
+  const handleAddEquipment = () => {
+    navigate("/equipment/add");
+  };
+
   if (isQueryLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -58,7 +67,10 @@ const EquipmentPage = () => {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">Equipment Inventory</h1>
-      <EquipmentTable equipmentList={equipmentList || []} />
+      <EquipmentTable 
+        equipmentList={equipmentList || []} 
+        onAddEquipment={handleAddEquipment}
+      />
     </div>
   );
 };

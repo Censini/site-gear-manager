@@ -13,9 +13,10 @@ import { getSiteById } from "@/data/mockData";
 
 interface EquipmentTableProps {
   equipmentList: Equipment[];
+  onAddEquipment: () => void;
 }
 
-const EquipmentTable = ({ equipmentList }: EquipmentTableProps) => {
+const EquipmentTable = ({ equipmentList, onAddEquipment }: EquipmentTableProps) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
@@ -24,7 +25,7 @@ const EquipmentTable = ({ equipmentList }: EquipmentTableProps) => {
   const filteredEquipment = equipmentList.filter((item) => {
     const matchesSearch = 
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.ipAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.ipAddress && item.ipAddress.toLowerCase().includes(searchTerm.toLowerCase())) ||
       item.manufacturer.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.model.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -83,7 +84,10 @@ const EquipmentTable = ({ equipmentList }: EquipmentTableProps) => {
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
-          <Button className="flex items-center gap-1">
+          <Button 
+            className="flex items-center gap-1"
+            onClick={onAddEquipment}
+          >
             <Plus className="h-4 w-4" />
             <span>Add</span>
           </Button>
