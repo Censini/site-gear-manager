@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import SiteCard from "@/components/cards/SiteCard";
@@ -17,7 +17,7 @@ const Sites = () => {
   const queryClient = useQueryClient();
   
   // Fetch sites from Supabase
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["sites"],
     queryFn: async () => {
       try {
@@ -52,8 +52,15 @@ const Sites = () => {
     // Ensure the query doesn't retry infinitely on error
     retry: 1,
     // Initialize with empty array if data is undefined
-    initialData: []
+    initialData: [],
+    // Don't cache for too long to ensure freshness
+    staleTime: 1000
   });
+
+  // Force refetch when component mounts to ensure fresh data
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   // Ensure sites is always an array
   const sites = Array.isArray(data) ? data : [];

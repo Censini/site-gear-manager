@@ -23,6 +23,14 @@ interface SiteHeaderProps {
 const SiteHeader = ({ site, onDelete }: SiteHeaderProps) => {
   const navigate = useNavigate();
   
+  const handleDelete = async () => {
+    const success = await onDelete();
+    if (success) {
+      // Force navigation to sites page after successful deletion
+      navigate("/sites", { replace: true });
+    }
+  };
+  
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div className="flex items-center gap-2">
@@ -63,7 +71,7 @@ const SiteHeader = ({ site, onDelete }: SiteHeaderProps) => {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction 
-                onClick={onDelete} 
+                onClick={handleDelete} 
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 Delete

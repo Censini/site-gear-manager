@@ -7,10 +7,12 @@ import { useGetSiteIPRanges } from "./useGetSiteIPRanges";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 export const useSiteData = (id: string | undefined) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   
   // Fetch site data
   const { 
@@ -55,11 +57,23 @@ export const useSiteData = (id: string | undefined) => {
       
       if (error) throw error;
       
-      // Invalidate queries to refresh data across the app
-      queryClient.invalidateQueries({ queryKey: ["sites"] });
-      queryClient.invalidateQueries({ queryKey: ["site", id] });
+      // Force remove this site from the cache
+      queryClient.setQueryData(["site", id], null);
+      
+      // Invalidate and refetch queries to refresh data across the app
+      await queryClient.invalidateQueries({ queryKey: ["sites"] });
+      
+      // Remove from the cache
+      const sitesData = queryClient.getQueryData(["sites"]);
+      if (Array.isArray(sitesData)) {
+        queryClient.setQueryData(
+          ["sites"], 
+          sitesData.filter(site => site.id !== id)
+        );
+      }
       
       toast.success("Site deleted successfully");
+      navigate("/sites"); // Force navigation back to sites
       return true;
     } catch (error) {
       console.error("Error deleting site:", error);
