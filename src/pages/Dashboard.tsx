@@ -9,8 +9,10 @@ import TypeChart from "@/components/dashboard/TypeChart";
 import SiteContactsCard from "@/components/sites/SiteContactsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DashboardStats } from "@/types/types";
 
 const Dashboard = () => {
+  // Query pour récupérer les statistiques de base
   const { data: stats, isLoading: isLoadingStats } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
@@ -46,6 +48,59 @@ const Dashboard = () => {
         connectionsCount: connectionsCount || 0,
       };
     },
+  });
+
+  // Query pour récupérer les statistiques par statut et type d'équipement
+  const { data: chartStats, isLoading: isLoadingChartStats } = useQuery({
+    queryKey: ["equipment-stats"],
+    queryFn: async () => {
+      // Récupérer les équipements pour compter par statut et type
+      const { data, error } = await supabase
+        .from("equipment")
+        .select("status, type");
+
+      if (error) throw error;
+
+      // Compter par statut
+      const statusCounts = {
+        active: 0,
+        maintenance: 0,
+        failure: 0,
+        unknown: 0
+      };
+
+      // Compter par type
+      const typeCounts = {
+        router: 0,
+        switch: 0,
+        hub: 0,
+        wifi: 0,
+        server: 0,
+        printer: 0,
+        other: 0
+      };
+
+      // Compter les équipements par statut et type
+      data.forEach(item => {
+        // Statut
+        if (item.status === "Actif") statusCounts.active += 1;
+        else if (item.status === "Maintenance") statusCounts.maintenance += 1;
+        else if (item.status === "Problème") statusCounts.failure += 1;
+        else statusCounts.unknown += 1;
+
+        // Type
+        if (typeCounts.hasOwnProperty(item.type?.toLowerCase())) {
+          typeCounts[item.type.toLowerCase()] += 1;
+        } else {
+          typeCounts.other += 1;
+        }
+      });
+
+      return {
+        equipmentByStatus: statusCounts,
+        equipmentByType: typeCounts
+      } as DashboardStats;
+    }
   });
 
   // Query pour récupérer les équipements avec problèmes
@@ -96,7 +151,7 @@ const Dashboard = () => {
     },
   });
 
-  const isLoading = isLoadingStats || isLoadingIssues || isLoadingProviders;
+  const isLoading = isLoadingStats || isLoadingIssues || isLoadingProviders || isLoadingChartStats;
 
   if (isLoading) {
     return (
@@ -143,7 +198,7 @@ const Dashboard = () => {
             <CardTitle>Statut des équipements</CardTitle>
           </CardHeader>
           <CardContent>
-            <StatusChart />
+            <StatusChart stats={chartStats as DashboardStats} />
           </CardContent>
         </Card>
 
@@ -153,11 +208,11 @@ const Dashboard = () => {
             <CardTitle>Types d'équipements</CardTitle>
           </CardHeader>
           <CardContent>
-            <TypeChart />
+            <TypeChart stats={chartStats as DashboardStats} />
           </CardContent>
         </Card>
         
-        {/* Carte des contacts de sites (nouvelle) */}
+        {/* Carte des contacts de sites */}
         <SiteContactsCard />
       </div>
 
