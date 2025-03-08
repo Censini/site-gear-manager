@@ -4,12 +4,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ConnectionForm from "@/components/connection/ConnectionForm";
 import { useGetConnection } from "@/hooks/useGetConnection";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { useUpdateConnection } from "@/hooks/useUpdateConnection";
+import { ConnectionFormValues } from "@/components/connection/ConnectionForm";
 
 const EditConnection = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: connection, isLoading, error } = useGetConnection(id || "");
+  const { mutate: updateConnection, isPending } = useUpdateConnection(id || "");
+
+  const handleSubmit = (data: ConnectionFormValues) => {
+    updateConnection(data, {
+      onSuccess: () => {
+        navigate("/connections");
+      }
+    });
+  };
+
+  const handleCancel = () => {
+    navigate("/connections");
+  };
 
   if (isLoading) {
     return <div className="p-8">Loading connection details...</div>;
@@ -43,7 +58,12 @@ const EditConnection = () => {
           <CardTitle>Connection Details</CardTitle>
         </CardHeader>
         <CardContent>
-          <ConnectionForm connectionToEdit={connection} />
+          <ConnectionForm 
+            connectionToEdit={connection} 
+            onSubmit={handleSubmit}
+            isSubmitting={isPending}
+            onCancel={handleCancel}
+          />
         </CardContent>
       </Card>
     </div>

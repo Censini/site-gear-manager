@@ -41,7 +41,7 @@ const connectionSchema = z.object({
   }),
 });
 
-type ConnectionFormValues = z.infer<typeof connectionSchema>;
+export type ConnectionFormValues = z.infer<typeof connectionSchema>;
 
 interface ConnectionFormProps {
   connectionToEdit?: NetworkConnection;
@@ -248,10 +248,14 @@ const ConnectionForm = ({
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting 
-              ? connectionToEdit ? "Saving..." : "Adding..." 
-              : connectionToEdit ? "Save Changes" : "Save Connection"
-            }
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {connectionToEdit ? "Saving..." : "Adding..."}
+              </>
+            ) : (
+              connectionToEdit ? "Save Changes" : "Save Connection"
+            )}
           </Button>
         </div>
       </form>

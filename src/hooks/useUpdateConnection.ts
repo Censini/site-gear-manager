@@ -1,55 +1,51 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { NetworkConnection } from "@/types/types";
 import { toast } from "sonner";
+import { ConnectionFormValues } from "@/components/connection/ConnectionForm";
+import { NetworkConnection } from "@/types/types";
 
-export const useUpdateConnection = () => {
+export const useUpdateConnection = (connectionId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      connectionData,
-    }: {
-      id: string;
-      connectionData: Omit<NetworkConnection, "id" | "siteName">;
-    }) => {
-      console.log("Updating connection:", id, connectionData);
+    mutationFn: async (data: ConnectionFormValues) => {
+      console.log("Updating connection with data:", data);
 
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { data, error } = await supabase
+      // Convert empty site ID to null for the database
+      const siteId = data.siteId || null;
+
+      const { error } = await supabase
         .from("network_connections")
         .update({
-          site_id: connectionData.siteId,
-          type: connectionData.type,
-          provider: connectionData.provider,
-          contract_ref: connectionData.contractRef,
-          bandwidth: connectionData.bandwidth,
-          sla: connectionData.sla,
-          status: connectionData.status,
-          user_id: user?.id // Keep the user ID to comply with RLS
+          site_id: siteId,
+          type: data.type,
+          provider: data.provider,
+          contract_ref: data.contractRef,
+          bandwidth: data.bandwidth,
+          sla: data.sla,
+          status: data.status
         })
-        .eq("id", id)
-        .select("*")
-        .single();
+        .eq("id", connectionId);
 
       if (error) {
         console.error("Error updating connection:", error);
         throw error;
       }
 
-      return data;
+      return { id: connectionId } as NetworkConnection;
     },
     onSuccess: () => {
       toast.success("Connection updated successfully");
+      
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["connection", connectionId] });
       queryClient.invalidateQueries({ queryKey: ["connections"] });
+      queryClient.invalidateQueries({ queryKey: ["site-connections"] });
     },
     onError: (error) => {
-      console.error("Error in update connection mutation:", error);
+      console.error("Mutation error:", error);
       toast.error("Failed to update connection");
-    },
+    }
   });
 };
