@@ -1,5 +1,5 @@
 
-import { Server, Building, Network, AlertTriangle } from "lucide-react";
+import { Server, Building, Network, AlertTriangle, Globe, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
 import StatsCard from "@/components/cards/StatsCard";
 import StatusChart from "@/components/dashboard/StatusChart";
@@ -14,6 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 const Dashboard = () => {
   const [equipment, setEquipment] = useState<any[]>([]);
   const [sites, setSites] = useState<any[]>([]);
+  const [connections, setConnections] = useState<any[]>([]);
+  const [providers, setProviders] = useState<{name: string, count: number}[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     totalSites: 0,
     totalEquipment: 0,
@@ -47,7 +49,6 @@ const Dashboard = () => {
           .select('*');
         
         if (equipmentError) throw equipmentError;
-        console.log("Fetched equipment:", equipmentData);
         
         // Fetch sites
         const { data: sitesData, error: sitesError } = await supabase
@@ -56,8 +57,30 @@ const Dashboard = () => {
         
         if (sitesError) throw sitesError;
         
+        // Fetch connections
+        const { data: connectionsData, error: connectionsError } = await supabase
+          .from('network_connections')
+          .select('*');
+          
+        if (connectionsError) throw connectionsError;
+        
         setEquipment(equipmentData || []);
         setSites(sitesData || []);
+        setConnections(connectionsData || []);
+        
+        // Calculate providers statistics
+        const providerCounts = connectionsData?.reduce((acc: Record<string, number>, conn: any) => {
+          const provider = conn.provider || 'Inconnu';
+          acc[provider] = (acc[provider] || 0) + 1;
+          return acc;
+        }, {});
+        
+        const providersArray = Object.entries(providerCounts || {})
+          .map(([name, count]) => ({ name, count: count as number }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5);
+          
+        setProviders(providersArray);
         
         // Calculate statistics
         const totalEquipment = equipmentData?.length || 0;
@@ -136,7 +159,7 @@ const Dashboard = () => {
       
       <div className="dashboard-stats">
         <StatsCard
-          title="Total Équipement"
+          title="Total Équipements"
           value={stats.totalEquipment}
           icon={<Server className="h-6 w-6 text-primary" />}
         />
@@ -146,7 +169,7 @@ const Dashboard = () => {
           icon={<Building className="h-6 w-6 text-primary" />}
         />
         <StatsCard
-          title="Équipement Actif"
+          title="Équipements Actifs"
           value={stats.equipmentByStatus.active}
           icon={<Network className="h-6 w-6 text-primary" />}
         />
@@ -162,45 +185,83 @@ const Dashboard = () => {
         <TypeChart stats={stats} />
       </div>
 
-      <Card className="dashboard-table">
-        <CardHeader>
-          <CardTitle>Équipement avec Problèmes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead>Adresse IP</TableHead>
-                <TableHead>Site</TableHead>
-                <TableHead>Statut</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {equipmentWithIssues.length > 0 ? (
-                equipmentWithIssues.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>{item.ip_address}</TableCell>
-                    <TableCell>
-                      {sites.find((site) => site.id === item.site_id)?.name || "Non assigné"}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={item.status} />
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="dashboard-table">
+          <CardHeader>
+            <CardTitle>Équipements avec Problèmes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Adresse IP</TableHead>
+                  <TableHead>Site</TableHead>
+                  <TableHead>Statut</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {equipmentWithIssues.length > 0 ? (
+                  equipmentWithIssues.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell>{item.ip_address}</TableCell>
+                      <TableCell>
+                        {sites.find((site) => site.id === item.site_id)?.name || "Non assigné"}
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={item.status} />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                      Aucun équipement avec problèmes trouvé.
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+        
+        <Card className="dashboard-table">
+          <CardHeader>
+            <CardTitle>Fournisseurs de Liens Internet</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    Aucun équipement avec problèmes trouvé.
-                  </TableCell>
+                  <TableHead>Fournisseur</TableHead>
+                  <TableHead>Nombre de connexions</TableHead>
+                  <TableHead>Pourcentage</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {providers.length > 0 ? (
+                  providers.map((provider, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{provider.name}</TableCell>
+                      <TableCell>{provider.count}</TableCell>
+                      <TableCell>
+                        {Math.round((provider.count / connections.length) * 100)}%
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="h-24 text-center">
+                      Aucun fournisseur de liens internet trouvé.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
@@ -221,7 +282,10 @@ const DashboardSkeleton = () => (
       <Skeleton className="h-80" />
     </div>
 
-    <Skeleton className="h-96" />
+    <div className="grid gap-6 md:grid-cols-2">
+      <Skeleton className="h-96" />
+      <Skeleton className="h-96" />
+    </div>
   </div>
 );
 

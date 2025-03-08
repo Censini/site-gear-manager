@@ -16,15 +16,15 @@ interface StatsCardProps {
 
 const StatsCard = ({ title, value, icon, className, subtitle, trend }: StatsCardProps) => {
   return (
-    <Card className={cn("dashboard-stats-card", className)}>
+    <Card className={cn("dashboard-stats-card p-4", className)}>
       <div className="flex flex-col items-center justify-center text-center w-full h-full">
-        <div className="flex items-center justify-center mb-2">
+        <div className="flex items-center justify-center mb-3">
           <div className="p-2 rounded-full bg-primary/10">{icon}</div>
         </div>
         
-        <div className="dashboard-stat-value">{value}</div>
+        <div className="text-3xl font-bold dashboard-stat-value">{value}</div>
         
-        <div className="dashboard-stat-label">{title}</div>
+        <div className="text-sm mt-1 text-muted-foreground dashboard-stat-label">{title}</div>
         
         {subtitle && <p className="text-xs text-muted-foreground mt-2">{subtitle}</p>}
         

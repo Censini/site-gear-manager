@@ -17,7 +17,7 @@ const sidebarItems = [
   { name: "Tableau de bord", path: "/", icon: Home },
   { name: "Équipements", path: "/equipment", icon: Server },
   { name: "Sites", path: "/sites", icon: Building },
-  { name: "Connexions", path: "/connections", icon: Network },
+  { name: "Liens Internet", path: "/connections", icon: Network },
   { name: "IPAM", path: "/ipam", icon: Wifi },
   { name: "Import", path: "/import", icon: Upload },
   { name: "Export", path: "/export", icon: Download },
