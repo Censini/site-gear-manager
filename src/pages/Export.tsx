@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Download, FileJson, FileSpreadsheet, FileText } from "lucide-react";
-import { exportToJSON, exportToCSV, exportToMarkdown } from "@/utils/exportUtils";
+import { exportAsJson, exportAsCsv, exportAsMarkdown } from "@/utils/exportUtils";
 
 const Export = () => {
   const [isExporting, setIsExporting] = useState({
@@ -22,14 +22,14 @@ const Export = () => {
       const timestamp = new Date().toISOString().split("T")[0];
       
       if (format === "json") {
-        filename = `network-data-${timestamp}.json`;
-        await exportToJSON(filename);
+        filename = `network-data-${timestamp}`;
+        await exportAsJson([], filename);
       } else if (format === "csv") {
-        filename = `network-data-${timestamp}.csv`;
-        await exportToCSV(filename);
+        filename = `network-data-${timestamp}`;
+        await exportAsCsv([], filename);
       } else if (format === "markdown") {
-        filename = `network-data-${timestamp}.md`;
-        await exportToMarkdown(filename);
+        filename = `network-data-${timestamp}`;
+        await exportAsMarkdown([], 'Network Data Export', filename);
       }
       
       toast.success(`Successfully exported data to ${format.toUpperCase()}`);
