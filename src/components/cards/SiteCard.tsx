@@ -30,17 +30,21 @@ const SiteCard = ({ site }: SiteCardProps) => {
           </div>
           
           <div className="space-y-2 flex-grow">
-            <p className="text-sm">{site.address}</p>
+            {site.address && <p className="text-sm">{site.address}</p>}
             
-            <div className="flex items-center text-sm">
-              <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span>{site.contactEmail}</span>
-            </div>
+            {site.contactEmail && (
+              <div className="flex items-center text-sm">
+                <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                <span>{site.contactEmail}</span>
+              </div>
+            )}
             
-            <div className="flex items-center text-sm">
-              <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span>{site.contactPhone}</span>
-            </div>
+            {site.contactPhone && (
+              <div className="flex items-center text-sm">
+                <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
+                <span>{site.contactPhone}</span>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

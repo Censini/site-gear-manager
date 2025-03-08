@@ -8,33 +8,50 @@ import { Button } from "@/components/ui/button";
 import { Search, Plus, Loader2 } from "lucide-react";
 import { Site } from "@/types/types";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const Sites = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   // Fetch sites from Supabase
-  const { data: sites = [], isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["sites"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sites")
-        .select("*");
-      
-      if (error) throw error;
-      
-      return data.map(site => ({
-        id: site.id,
-        name: site.name,
-        location: site.location,
-        country: site.country,
-        address: site.address || "",
-        contactName: site.contact_name || "",
-        contactEmail: site.contact_email || "",
-        contactPhone: site.contact_phone || ""
-      } as Site));
+      try {
+        const { data, error } = await supabase
+          .from("sites")
+          .select("*");
+        
+        if (error) throw error;
+        
+        console.log("Fetched sites:", data);
+        
+        return data.map(site => ({
+          id: site.id,
+          name: site.name,
+          location: site.location,
+          country: site.country,
+          address: site.address || "",
+          contactName: site.contact_name || "",
+          contactEmail: site.contact_email || "",
+          contactPhone: site.contact_phone || ""
+        } as Site));
+      } catch (error) {
+        console.error("Error fetching sites:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load sites. Please try again later.",
+        });
+        return [];
+      }
     }
   });
+
+  // Ensure we always have an array to work with
+  const sites = data || [];
 
   const filteredSites = sites.filter((site) =>
     site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -75,13 +92,16 @@ const Sites = () => {
       </div>
       
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredSites.map((site) => (
-          <SiteCard key={site.id} site={site} />
-        ))}
-        {filteredSites.length === 0 && (
+        {filteredSites.length > 0 ? (
+          filteredSites.map((site) => (
+            <SiteCard key={site.id} site={site} />
+          ))
+        ) : (
           <div className="col-span-full text-center py-10">
             <h3 className="text-lg font-medium">No sites found</h3>
-            <p className="text-muted-foreground">Try adjusting your search terms</p>
+            <p className="text-muted-foreground">
+              {searchTerm ? "Try adjusting your search terms" : "Add your first site to get started"}
+            </p>
           </div>
         )}
       </div>
