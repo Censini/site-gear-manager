@@ -27,12 +27,10 @@ const SiteDetail = () => {
     refetch 
   } = useSiteData(id);
 
-  // Handle site deletion with navigation
+  // Handle site deletion without checking return value
   const handleDeleteSite = async () => {
-    const success = await deleteSite();
-    if (success) {
-      navigate("/sites");
-    }
+    await deleteSite();
+    // Navigation is now handled inside the deleteSite function
   };
 
   // Show loading state
