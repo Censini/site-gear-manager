@@ -47,12 +47,17 @@ const Sites = () => {
         });
         return [];
       }
-    }
+    },
+    // Ensure the query doesn't retry infinitely on error
+    retry: 1,
+    // Initialize with empty array if data is undefined
+    initialData: []
   });
 
-  // Ensure we always have an array to work with
-  const sites = data || [];
+  // Ensure sites is always an array
+  const sites = Array.isArray(data) ? data : [];
 
+  // Filter sites based on search term
   const filteredSites = sites.filter((site) =>
     site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     site.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
