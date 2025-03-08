@@ -10,10 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { EquipmentType, Status } from "@/types/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 const AddEquipment = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { session } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [equipmentData, setEquipmentData] = useState({
     name: "",
@@ -41,6 +43,10 @@ const AddEquipment = () => {
     setIsSubmitting(true);
 
     try {
+      if (!session?.user?.id) {
+        throw new Error("Vous devez être connecté pour ajouter un équipement");
+      }
+
       // Convert camelCase to snake_case for Supabase
       const dbData = {
         name: equipmentData.name,
@@ -51,7 +57,8 @@ const AddEquipment = () => {
         mac_address: equipmentData.macAddress,
         firmware: equipmentData.firmware,
         status: equipmentData.status,
-        netbios: equipmentData.netbios
+        netbios: equipmentData.netbios,
+        user_id: session.user.id
       };
 
       const { data, error } = await supabase
