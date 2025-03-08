@@ -1,24 +1,135 @@
 
 import { useParams, useNavigate } from "react-router-dom";
-import { getSiteById, getEquipmentBySiteId, getNetworkConnectionsBySiteId, getIPRangesBySiteId } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import StatusBadge from "@/components/ui/StatusBadge";
 import EquipmentTypeIcon from "@/components/ui/EquipmentTypeIcon";
-import { ArrowLeft, Edit, Building, Mail, MapPin, Phone } from "lucide-react";
+import { ArrowLeft, Edit, Building, Mail, MapPin, Phone, Loader2 } from "lucide-react";
+import { Equipment, NetworkConnection, IPRange } from "@/types/types";
 
 const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const site = getSiteById(id || "");
   
-  const equipment = site ? getEquipmentBySiteId(site.id) : [];
-  const connections = site ? getNetworkConnectionsBySiteId(site.id) : [];
-  const ipRanges = site ? getIPRangesBySiteId(site.id) : [];
+  // Fetch site data from Supabase
+  const { data: site, isLoading: isLoadingSite, error: siteError } = useQuery({
+    queryKey: ["site", id],
+    queryFn: async () => {
+      if (!id) throw new Error("No site ID provided");
+      
+      const { data, error } = await supabase
+        .from("sites")
+        .select("*")
+        .eq("id", id)
+        .single();
+      
+      if (error) throw error;
+      
+      return {
+        id: data.id,
+        name: data.name,
+        location: data.location,
+        country: data.country,
+        address: data.address || "",
+        contactName: data.contact_name || "",
+        contactEmail: data.contact_email || "",
+        contactPhone: data.contact_phone || ""
+      };
+    }
+  });
+  
+  // Fetch equipment data for this site
+  const { data: equipment = [], isLoading: isLoadingEquipment } = useQuery({
+    queryKey: ["equipment", "site", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("equipment")
+        .select("*")
+        .eq("site_id", id);
+      
+      if (error) throw error;
+      
+      return data.map(item => ({
+        id: item.id,
+        name: item.name,
+        siteId: item.site_id || "",
+        type: item.type,
+        model: item.model,
+        manufacturer: item.manufacturer,
+        ipAddress: item.ip_address || "",
+        macAddress: item.mac_address || "",
+        firmware: item.firmware || "",
+        installDate: item.install_date || "",
+        status: item.status,
+        netbios: item.netbios || ""
+      } as Equipment));
+    }
+  });
+  
+  // Fetch network connections for this site
+  const { data: connections = [], isLoading: isLoadingConnections } = useQuery({
+    queryKey: ["connections", "site", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("network_connections")
+        .select("*")
+        .eq("site_id", id);
+      
+      if (error) throw error;
+      
+      return data.map(item => ({
+        id: item.id,
+        siteId: item.site_id || "",
+        type: item.type,
+        provider: item.provider,
+        contractRef: item.contract_ref || "",
+        bandwidth: item.bandwidth || "",
+        sla: item.sla || "",
+        status: item.status
+      } as NetworkConnection));
+    }
+  });
+  
+  // Fetch IP ranges for this site
+  const { data: ipRanges = [], isLoading: isLoadingIPRanges } = useQuery({
+    queryKey: ["ipRanges", "site", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ip_ranges")
+        .select("*")
+        .eq("site_id", id);
+      
+      if (error) throw error;
+      
+      return data.map(item => ({
+        id: item.id,
+        siteId: item.site_id || "",
+        range: item.range,
+        description: item.description || "",
+        isReserved: item.is_reserved || false,
+        dhcpScope: item.dhcp_scope || false
+      } as IPRange));
+    }
+  });
 
-  if (!site) {
+  // Show loading state
+  if (isLoadingSite || isLoadingEquipment || isLoadingConnections || isLoadingIPRanges) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Show error state
+  if (siteError || !site) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh]">
         <h2 className="text-2xl font-bold">Site not found</h2>
