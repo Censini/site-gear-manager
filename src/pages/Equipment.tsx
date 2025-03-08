@@ -21,22 +21,27 @@ const EquipmentPage = () => {
         .from("equipment")
         .select("*");
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching equipment:", error);
+        throw error;
+      }
+      
+      console.log("Fetched equipment:", data);
       
       // Transform snake_case database fields to camelCase for our frontend types
       return (data || []).map(item => ({
         id: item.id,
         name: item.name,
-        siteId: item.site_id,
+        siteId: item.site_id || "",
         type: item.type,
         model: item.model,
         manufacturer: item.manufacturer,
-        ipAddress: item.ip_address,
-        macAddress: item.mac_address,
-        firmware: item.firmware,
-        installDate: item.install_date,
+        ipAddress: item.ip_address || "",
+        macAddress: item.mac_address || "",
+        firmware: item.firmware || "",
+        installDate: item.install_date || "",
         status: item.status,
-        netbios: item.netbios
+        netbios: item.netbios || ""
       })) as Equipment[];
     }
   });

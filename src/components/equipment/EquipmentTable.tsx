@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import StatusBadge from "@/components/ui/StatusBadge";
 import EquipmentTypeIcon from "@/components/ui/EquipmentTypeIcon";
 import { Search, Plus } from "lucide-react";
-import { getSiteById } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EquipmentTableProps {
   equipmentList: Equipment[];
@@ -21,6 +22,27 @@ const EquipmentTable = ({ equipmentList, onAddEquipment }: EquipmentTableProps) 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
   const [typeFilter, setTypeFilter] = useState<EquipmentType | "all">("all");
+
+  // Get sites data for displaying site names
+  const { data: sites } = useQuery({
+    queryKey: ["sites"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sites")
+        .select("id, name");
+      
+      if (error) throw error;
+      
+      return data.reduce((acc, site) => {
+        acc[site.id] = site.name;
+        return acc;
+      }, {} as Record<string, string>);
+    }
+  });
+  
+  const getSiteName = (siteId: string) => {
+    return sites?.[siteId] || "Not assigned";
+  };
 
   const filteredEquipment = equipmentList.filter((item) => {
     const matchesSearch = 
@@ -108,31 +130,32 @@ const EquipmentTable = ({ equipmentList, onAddEquipment }: EquipmentTableProps) 
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredEquipment.map((item) => (
-              <TableRow 
-                key={item.id}
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => navigate(`/equipment/${item.id}`)}
-              >
-                <TableCell>
-                  <div className="font-medium">{item.name}</div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <EquipmentTypeIcon type={item.type} className="text-muted-foreground" />
-                    <span className="capitalize">{item.type}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{item.ipAddress}</TableCell>
-                <TableCell>{item.manufacturer}</TableCell>
-                <TableCell>{item.model}</TableCell>
-                <TableCell>{getSiteById(item.siteId)?.name}</TableCell>
-                <TableCell>
-                  <StatusBadge status={item.status} />
-                </TableCell>
-              </TableRow>
-            ))}
-            {filteredEquipment.length === 0 && (
+            {filteredEquipment.length > 0 ? (
+              filteredEquipment.map((item) => (
+                <TableRow 
+                  key={item.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => navigate(`/equipment/${item.id}`)}
+                >
+                  <TableCell>
+                    <div className="font-medium">{item.name}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <EquipmentTypeIcon type={item.type} className="text-muted-foreground" />
+                      <span className="capitalize">{item.type}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{item.ipAddress}</TableCell>
+                  <TableCell>{item.manufacturer}</TableCell>
+                  <TableCell>{item.model}</TableCell>
+                  <TableCell>{getSiteName(item.siteId)}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={item.status} />
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   No equipment found.

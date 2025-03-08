@@ -1,19 +1,82 @@
 
 import { useParams, useNavigate } from "react-router-dom";
-import { getEquipmentById, getSiteById } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import StatusBadge from "@/components/ui/StatusBadge";
 import EquipmentTypeIcon from "@/components/ui/EquipmentTypeIcon";
-import { ArrowLeft, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Loader2 } from "lucide-react";
+import { Equipment } from "@/types/types";
 
 const EquipmentDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const equipment = getEquipmentById(id || "");
-  const site = equipment ? getSiteById(equipment.siteId) : undefined;
+  
+  const { data: equipment, isLoading, error } = useQuery({
+    queryKey: ["equipment", id],
+    queryFn: async () => {
+      if (!id) throw new Error("No equipment ID provided");
+      
+      const { data, error } = await supabase
+        .from("equipment")
+        .select("*")
+        .eq("id", id)
+        .single();
+      
+      if (error) throw error;
+      
+      return {
+        id: data.id,
+        name: data.name,
+        siteId: data.site_id || "",
+        type: data.type,
+        model: data.model,
+        manufacturer: data.manufacturer,
+        ipAddress: data.ip_address || "",
+        macAddress: data.mac_address || "",
+        firmware: data.firmware || "",
+        installDate: data.install_date || "",
+        status: data.status,
+        netbios: data.netbios || ""
+      } as Equipment;
+    }
+  });
+  
+  const { data: site } = useQuery({
+    queryKey: ["site", equipment?.siteId],
+    enabled: !!equipment?.siteId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sites")
+        .select("*")
+        .eq("id", equipment?.siteId)
+        .single();
+      
+      if (error) throw error;
+      
+      return {
+        id: data.id,
+        name: data.name,
+        location: data.location,
+        country: data.country,
+        address: data.address || "",
+        contactName: data.contact_name || "",
+        contactEmail: data.contact_email || "",
+        contactPhone: data.contact_phone || ""
+      };
+    }
+  });
 
-  if (!equipment) {
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error || !equipment) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh]">
         <h2 className="text-2xl font-bold">Equipment not found</h2>
@@ -65,7 +128,7 @@ const EquipmentDetail = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Site</p>
-                <p className="mt-1">{site?.name}</p>
+                <p className="mt-1">{site?.name || "Not assigned"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Model</p>
@@ -77,7 +140,7 @@ const EquipmentDetail = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Installation Date</p>
-                <p className="mt-1">{equipment.installDate}</p>
+                <p className="mt-1">{equipment.installDate || "Not specified"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Status</p>
@@ -97,11 +160,11 @@ const EquipmentDetail = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">IP Address</p>
-                <p className="mt-1">{equipment.ipAddress}</p>
+                <p className="mt-1">{equipment.ipAddress || "Not specified"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">MAC Address</p>
-                <p className="mt-1">{equipment.macAddress}</p>
+                <p className="mt-1">{equipment.macAddress || "Not specified"}</p>
               </div>
               {equipment.netbios && (
                 <div>
@@ -111,7 +174,7 @@ const EquipmentDetail = () => {
               )}
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Firmware</p>
-                <p className="mt-1">{equipment.firmware}</p>
+                <p className="mt-1">{equipment.firmware || "Not specified"}</p>
               </div>
             </div>
           </CardContent>
