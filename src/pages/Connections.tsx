@@ -1,22 +1,25 @@
 
-import { networkConnections, getSiteById } from "@/data/mockData";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Plus } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import StatusBadge from "@/components/ui/StatusBadge";
+import { useGetConnections } from "@/hooks/useGetConnections";
 
 const Connections = () => {
+  const { data: connections = [], isLoading } = useGetConnections();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
-  const filteredConnections = networkConnections.filter((connection) => {
+  const filteredConnections = connections.filter((connection) => {
     const matchesSearch = 
       connection.provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
       connection.contractRef.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      connection.bandwidth.toLowerCase().includes(searchTerm.toLowerCase());
+      connection.bandwidth.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (connection as any).siteName?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesType = typeFilter === "all" || connection.type === typeFilter;
     
@@ -57,9 +60,11 @@ const Connections = () => {
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
-          <Button className="flex items-center gap-1">
-            <Plus className="h-4 w-4" />
-            <span>Add Connection</span>
+          <Button className="flex items-center gap-1" asChild>
+            <Link to="/connections/add">
+              <Plus className="h-4 w-4" />
+              <span>Add Connection</span>
+            </Link>
           </Button>
         </div>
       </div>
@@ -78,20 +83,27 @@ const Connections = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredConnections.map((connection) => (
-              <TableRow key={connection.id}>
-                <TableCell>{getSiteById(connection.siteId)?.name}</TableCell>
-                <TableCell className="capitalize">{connection.type}</TableCell>
-                <TableCell>{connection.provider}</TableCell>
-                <TableCell>{connection.contractRef}</TableCell>
-                <TableCell>{connection.bandwidth}</TableCell>
-                <TableCell>{connection.sla}</TableCell>
-                <TableCell>
-                  <StatusBadge status={connection.status} />
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center">
+                  Loading connections...
                 </TableCell>
               </TableRow>
-            ))}
-            {filteredConnections.length === 0 && (
+            ) : filteredConnections.length > 0 ? (
+              filteredConnections.map((connection) => (
+                <TableRow key={connection.id}>
+                  <TableCell>{(connection as any).siteName}</TableCell>
+                  <TableCell className="capitalize">{connection.type}</TableCell>
+                  <TableCell>{connection.provider}</TableCell>
+                  <TableCell>{connection.contractRef}</TableCell>
+                  <TableCell>{connection.bandwidth}</TableCell>
+                  <TableCell>{connection.sla}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={connection.status} />
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   No connections found.

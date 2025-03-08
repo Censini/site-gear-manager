@@ -1,4 +1,3 @@
-
 export type Status = "active" | "maintenance" | "failure" | "unknown";
 
 export interface Site {
@@ -21,6 +20,7 @@ export interface NetworkConnection {
   bandwidth: string;
   sla: string;
   status: Status;
+  siteName?: string;
 }
 
 export interface Equipment {
