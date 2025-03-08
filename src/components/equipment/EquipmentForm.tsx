@@ -46,7 +46,7 @@ const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) =
     firmware: initialData?.firmware || "",
     status: initialData?.status || "active" as Status,
     netbios: initialData?.netbios || "",
-    siteId: initialData?.siteId || "" 
+    siteId: initialData?.siteId || "not_deployed" // Changed from empty string to "not_deployed"
   });
 
   useEffect(() => {
@@ -104,7 +104,7 @@ const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) =
         status: equipmentData.status,
         netbios: equipmentData.netbios,
         user_id: session.user.id,
-        site_id: equipmentData.siteId || null
+        site_id: equipmentData.siteId === "not_deployed" ? null : equipmentData.siteId // Use null if not deployed
       };
 
       let result;
@@ -226,7 +226,7 @@ const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) =
                   <SelectValue placeholder={isLoadingSites ? "Chargement des sites..." : "Sélectionner un site (optionnel)"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Non déployé</SelectItem>
+                  <SelectItem value="not_deployed">Non déployé</SelectItem>
                   {sites.map((site) => (
                     <SelectItem key={site.id} value={site.id}>
                       {site.name}
