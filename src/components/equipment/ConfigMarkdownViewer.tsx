@@ -41,6 +41,7 @@ const ConfigMarkdownViewer = ({ initialConfig = "", equipmentId, onSave }: Confi
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      // Même si config est vide, on doit pouvoir l'enregistrer
       await onSave(config);
     } finally {
       setIsSaving(false);
@@ -61,7 +62,6 @@ const ConfigMarkdownViewer = ({ initialConfig = "", equipmentId, onSave }: Confi
               variant="outline"
               size="sm"
               onClick={handleClear}
-              disabled={!config}
             >
               <X className="h-4 w-4 mr-1" />
               Effacer
@@ -106,7 +106,7 @@ const ConfigMarkdownViewer = ({ initialConfig = "", equipmentId, onSave }: Confi
               />
               <Button 
                 onClick={handleSave} 
-                disabled={isSaving || !config}
+                disabled={isSaving}
                 className="w-full md:w-auto md:ml-auto"
               >
                 {isSaving ? "Enregistrement..." : "Enregistrer la configuration"}
