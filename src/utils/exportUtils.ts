@@ -1,4 +1,3 @@
-
 import { saveAs } from 'file-saver';
 import Papa from 'papaparse';
 import { marked } from 'marked';
@@ -14,7 +13,7 @@ const downloadFile = (data: string, filename: string, type: string) => {
 };
 
 // Export data as JSON
-export const exportAsJson = <T,>(data: T[], filename: string = 'export') => {
+export const exportAsJson = <T,>(data: T, filename: string = 'export') => {
   const jsonStr = JSON.stringify(data, null, 2);
   downloadFile(jsonStr, `${filename}.json`, 'application/json');
 };

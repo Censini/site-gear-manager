@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +6,7 @@ import { toast } from "sonner";
 import { Download, FileJson, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { exportAsJson, exportAsCsv, exportAsMarkdown, fetchAllData } from "@/utils/exportUtils";
 import { useQuery } from "@tanstack/react-query";
+import { saveAs } from "file-saver";
 
 const Export = () => {
   const [isExporting, setIsExporting] = useState({
@@ -49,77 +49,21 @@ const Export = () => {
         await exportAsCsv(flatData, filename);
       } else if (format === "markdown") {
         filename = `network-data-${timestamp}`;
-        // Pour Markdown, on crée un document structuré avec plusieurs sections
-        let mdContent = `# Exportation des données réseau\n\n`;
-        mdContent += `Date: ${new Date().toLocaleString()}\n\n`;
-        
-        // Sites
-        mdContent += `## Sites (${data.sites.length})\n\n`;
-        if (data.sites.length > 0) {
-          const headers = Object.keys(data.sites[0]);
-          mdContent += `| ${headers.join(' | ')} |\n`;
-          mdContent += `| ${headers.map(() => '---').join(' | ')} |\n`;
-          data.sites.forEach(site => {
-            const values = headers.map(header => {
-              const value = site[header as keyof typeof site];
-              return value !== null && value !== undefined ? String(value) : '';
-            });
-            mdContent += `| ${values.join(' | ')} |\n`;
-          });
-        } else {
-          mdContent += 'Aucun site disponible.\n\n';
-        }
-        
-        // Equipment
-        mdContent += `\n## Équipements (${data.equipment.length})\n\n`;
-        if (data.equipment.length > 0) {
-          const headers = Object.keys(data.equipment[0]);
-          mdContent += `| ${headers.join(' | ')} |\n`;
-          mdContent += `| ${headers.map(() => '---').join(' | ')} |\n`;
-          data.equipment.forEach(eq => {
-            const values = headers.map(header => {
-              const value = eq[header as keyof typeof eq];
-              return value !== null && value !== undefined ? String(value) : '';
-            });
-            mdContent += `| ${values.join(' | ')} |\n`;
-          });
-        } else {
-          mdContent += 'Aucun équipement disponible.\n\n';
-        }
-        
-        // Connections
-        mdContent += `\n## Connexions réseau (${data.connections.length})\n\n`;
-        if (data.connections.length > 0) {
-          const headers = Object.keys(data.connections[0]);
-          mdContent += `| ${headers.join(' | ')} |\n`;
-          mdContent += `| ${headers.map(() => '---').join(' | ')} |\n`;
-          data.connections.forEach(conn => {
-            const values = headers.map(header => {
-              const value = conn[header as keyof typeof conn];
-              return value !== null && value !== undefined ? String(value) : '';
-            });
-            mdContent += `| ${values.join(' | ')} |\n`;
-          });
-        } else {
-          mdContent += 'Aucune connexion disponible.\n\n';
-        }
-        
-        // IP Ranges
-        mdContent += `\n## Plages IP (${data.ipRanges.length})\n\n`;
-        if (data.ipRanges.length > 0) {
-          const headers = Object.keys(data.ipRanges[0]);
-          mdContent += `| ${headers.join(' | ')} |\n`;
-          mdContent += `| ${headers.map(() => '---').join(' | ')} |\n`;
-          data.ipRanges.forEach(range => {
-            const values = headers.map(header => {
-              const value = range[header as keyof typeof range];
-              return value !== null && value !== undefined ? String(value) : '';
-            });
-            mdContent += `| ${values.join(' | ')} |\n`;
-          });
-        } else {
-          mdContent += 'Aucune plage IP disponible.\n\n';
-        }
+        // Pour Markdown, on crée un document structuré
+        const mdContent = `# Exportation des données réseau\n\n` +
+          `Date: ${new Date().toLocaleString()}\n\n` +
+          
+          `## Sites (${data.sites.length})\n\n` +
+          generateMarkdownTable(data.sites) +
+          
+          `\n## Équipements (${data.equipment.length})\n\n` +
+          generateMarkdownTable(data.equipment) +
+          
+          `\n## Connexions réseau (${data.connections.length})\n\n` +
+          generateMarkdownTable(data.connections) +
+          
+          `\n## Plages IP (${data.ipRanges.length})\n\n` +
+          generateMarkdownTable(data.ipRanges);
         
         // Télécharger le document Markdown
         const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8' });
@@ -133,6 +77,25 @@ const Export = () => {
     } finally {
       setIsExporting(prev => ({ ...prev, [format]: false }));
     }
+  };
+
+  // Helper function to generate Markdown tables
+  const generateMarkdownTable = (data: any[]) => {
+    if (data.length === 0) return 'Aucune donnée disponible.\n\n';
+    
+    const headers = Object.keys(data[0]);
+    let table = `| ${headers.join(' | ')} |\n`;
+    table += `| ${headers.map(() => '---').join(' | ')} |\n`;
+    
+    data.forEach(item => {
+      const values = headers.map(header => {
+        const value = item[header];
+        return value !== null && value !== undefined ? String(value) : '';
+      });
+      table += `| ${values.join(' | ')} |\n`;
+    });
+    
+    return table;
   };
 
   if (isLoading) {
