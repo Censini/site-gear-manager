@@ -14,18 +14,21 @@ export const useAddConnection = () => {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       
+      // Create connection data object, handling empty site_id case
+      const connectionToInsert = {
+        site_id: connectionData.siteId || null, // Set to null if empty string
+        type: connectionData.type,
+        provider: connectionData.provider,
+        contract_ref: connectionData.contractRef,
+        bandwidth: connectionData.bandwidth,
+        sla: connectionData.sla,
+        status: connectionData.status,
+        user_id: user?.id // Add the user ID to comply with RLS
+      };
+
       const { data, error } = await supabase
         .from("network_connections")
-        .insert({
-          site_id: connectionData.siteId,
-          type: connectionData.type,
-          provider: connectionData.provider,
-          contract_ref: connectionData.contractRef,
-          bandwidth: connectionData.bandwidth,
-          sla: connectionData.sla,
-          status: connectionData.status,
-          user_id: user?.id // Add the user ID to comply with RLS
-        })
+        .insert(connectionToInsert)
         .select("*")
         .single();
 

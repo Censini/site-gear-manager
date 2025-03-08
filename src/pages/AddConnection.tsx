@@ -25,12 +25,17 @@ const AddConnection = () => {
   };
 
   const handleSubmit = async (data: any) => {
-    await addConnection.mutateAsync(data);
-    // Navigate back to site detail if siteId is provided
-    if (siteId) {
-      navigate(`/sites/${siteId}`);
-    } else {
-      navigate("/connections");
+    try {
+      await addConnection.mutateAsync(data);
+      // Navigate back to site detail if siteId is provided
+      if (siteId) {
+        navigate(`/sites/${siteId}`);
+      } else {
+        navigate("/connections");
+      }
+    } catch (error) {
+      console.error("Failed to add connection:", error);
+      // Error is already handled in the mutation
     }
   };
 
