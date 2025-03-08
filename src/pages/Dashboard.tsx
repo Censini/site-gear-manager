@@ -219,40 +219,6 @@ const Dashboard = () => {
         <div className="space-y-6">
           <Card className="dashboard-table">
             <CardHeader>
-              <CardTitle>Contacts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nom</TableHead>
-                    <TableHead>Téléphone</TableHead>
-                    <TableHead>Site</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {siteContacts.length > 0 ? (
-                    siteContacts.map((contact, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{contact.name}</TableCell>
-                        <TableCell>{contact.phone}</TableCell>
-                        <TableCell>{contact.site}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={3} className="h-24 text-center">
-                        Aucun contact trouvé.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-          
-          <Card className="dashboard-table">
-            <CardHeader>
               <CardTitle>Équipements avec Problèmes</CardTitle>
             </CardHeader>
             <CardContent>
@@ -321,6 +287,40 @@ const Dashboard = () => {
                 <TableRow>
                   <TableCell colSpan={3} className="h-24 text-center">
                     Aucun fournisseur de liens internet trouvé.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      
+      <Card className="dashboard-table">
+        <CardHeader>
+          <CardTitle>Contacts</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nom</TableHead>
+                <TableHead>Téléphone</TableHead>
+                <TableHead>Site</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {siteContacts.length > 0 ? (
+                siteContacts.map((contact, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">{contact.name}</TableCell>
+                    <TableCell>{contact.phone}</TableCell>
+                    <TableCell>{contact.site}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={3} className="h-24 text-center">
+                    Aucun contact trouvé.
                   </TableCell>
                 </TableRow>
               )}
