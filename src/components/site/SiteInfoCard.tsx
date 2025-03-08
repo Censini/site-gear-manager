@@ -34,7 +34,7 @@ const SiteInfoCard = ({ site }: SiteInfoCardProps) => {
           <Mail className="h-5 w-5 text-muted-foreground" />
           <div>
             <p className="text-sm font-medium text-muted-foreground">Email de contact</p>
-            <p>{site.contactEmail || site.contactMail || "Non renseigné"}</p>
+            <p>{site.contactEmail || "Non renseigné"}</p>
           </div>
         </div>
         

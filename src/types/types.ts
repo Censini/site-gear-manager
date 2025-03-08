@@ -53,18 +53,19 @@ export interface IPRange {
   dhcpScope: boolean;
 }
 
-// Alias Status pour l'ancienne utilisation du type
+// Alias Status for the old usage of the type
 export type Status = EquipmentStatus;
 
-// Interface pour les statistiques du tableau de bord
+// Interface for dashboard statistics
 export interface DashboardStats {
   totalEquipment: number;
   activeEquipment: number;
   totalSites: number;
   totalConnections: number;
+  sitesWithIssues: number;
   equipmentByType: Record<string, number>;
   equipmentByStatus: Record<string, number>;
-  recentActivity: Array<{
+  recentActivity?: Array<{
     id: string;
     type: string;
     name: string;

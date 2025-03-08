@@ -112,7 +112,7 @@ const ConnectionsTab = ({ connections, onRefresh }: ConnectionsTabProps) => {
             <TableCell>{connection.contractRef}</TableCell>
             <TableCell>{connection.bandwidth}</TableCell>
             <TableCell>
-              <StatusBadge status={connection.status} />
+              <StatusBadge status={connection.status as any} />
             </TableCell>
             <TableCell>
               <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>

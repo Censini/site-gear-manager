@@ -19,7 +19,7 @@ const EditEquipment = () => {
       
       const { data, error } = await supabase
         .from("equipment")
-        .select("*")
+        .select("*, config_markdown")
         .eq("id", id)
         .single();
       

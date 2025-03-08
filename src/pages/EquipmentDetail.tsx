@@ -36,7 +36,7 @@ const EquipmentDetail = () => {
       
       const { data, error } = await supabase
         .from("equipment")
-        .select("*")
+        .select("*, config_markdown")
         .eq("id", id)
         .single();
       
@@ -98,8 +98,6 @@ const EquipmentDetail = () => {
         .eq("id", id);
       
       if (error) throw error;
-      
-      return;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["equipment", id] });
@@ -121,7 +119,7 @@ const EquipmentDetail = () => {
   });
 
   const handleSaveConfig = async (config: string) => {
-    return saveConfigMutation.mutateAsync(config);
+    await saveConfigMutation.mutateAsync(config);
   };
 
   const handleEdit = () => {

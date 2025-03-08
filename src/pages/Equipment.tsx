@@ -16,7 +16,7 @@ const EquipmentPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("equipment")
-        .select("*");
+        .select("*, config_markdown");
       
       if (error) {
         console.error("Erreur lors de la récupération des équipements:", error);

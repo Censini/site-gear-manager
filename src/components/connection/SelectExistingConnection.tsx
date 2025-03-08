@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { 
@@ -123,7 +124,7 @@ const SelectExistingConnection = ({ siteId, onCancel, onSuccess }: SelectExistin
                 <TableCell>{connection.provider}</TableCell>
                 <TableCell>{connection.bandwidth}</TableCell>
                 <TableCell>
-                  <StatusBadge status={connection.status} />
+                  <StatusBadge status={connection.status as any} />
                 </TableCell>
               </TableRow>
             ))}
