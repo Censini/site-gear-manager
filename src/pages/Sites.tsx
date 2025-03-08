@@ -1,19 +1,54 @@
 
-import { sites } from "@/data/mockData";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import SiteCard from "@/components/cards/SiteCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Plus } from "lucide-react";
-import { useState } from "react";
+import { Search, Plus, Loader2 } from "lucide-react";
+import { Site } from "@/types/types";
+import { useNavigate } from "react-router-dom";
 
 const Sites = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
+  
+  // Fetch sites from Supabase
+  const { data: sites = [], isLoading } = useQuery({
+    queryKey: ["sites"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sites")
+        .select("*");
+      
+      if (error) throw error;
+      
+      return data.map(site => ({
+        id: site.id,
+        name: site.name,
+        location: site.location,
+        country: site.country,
+        address: site.address || "",
+        contactName: site.contact_name || "",
+        contactEmail: site.contact_email || "",
+        contactPhone: site.contact_phone || ""
+      } as Site));
+    }
+  });
 
   const filteredSites = sites.filter((site) =>
     site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     site.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
     site.country.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -30,7 +65,10 @@ const Sites = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button className="flex items-center gap-1 w-full md:w-auto">
+        <Button 
+          className="flex items-center gap-1 w-full md:w-auto"
+          onClick={() => navigate("/sites/add")}
+        >
           <Plus className="h-4 w-4" />
           <span>Add Site</span>
         </Button>

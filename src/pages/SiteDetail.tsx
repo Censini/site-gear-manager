@@ -10,13 +10,15 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import EquipmentTypeIcon from "@/components/ui/EquipmentTypeIcon";
 import { ArrowLeft, Edit, Building, Mail, MapPin, Phone, Loader2 } from "lucide-react";
 import { Equipment, NetworkConnection, IPRange } from "@/types/types";
+import { toast } from "sonner";
 
 const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  // Ajoutons des logs pour déboguer
+  // More debugging logs
   console.log("Site ID from URL:", id);
+  console.log("Site ID type:", typeof id);
   
   // Fetch site data from Supabase
   const { data: site, isLoading: isLoadingSite, error: siteError } = useQuery({
@@ -26,34 +28,40 @@ const SiteDetail = () => {
       
       console.log("Fetching site with ID:", id);
       
-      const { data, error } = await supabase
-        .from("sites")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle(); // Utilisons maybeSingle au lieu de single pour éviter les erreurs
-      
-      if (error) {
-        console.error("Error fetching site:", error);
+      try {
+        const { data, error } = await supabase
+          .from("sites")
+          .select("*")
+          .eq("id", id)
+          .maybeSingle();
+        
+        if (error) {
+          console.error("Error fetching site:", error);
+          throw error;
+        }
+        
+        if (!data) {
+          console.error("No site found with ID:", id);
+          throw new Error("Site not found");
+        }
+        
+        console.log("Site data retrieved:", data);
+        
+        return {
+          id: data.id,
+          name: data.name,
+          location: data.location,
+          country: data.country,
+          address: data.address || "",
+          contactName: data.contact_name || "",
+          contactEmail: data.contact_email || "",
+          contactPhone: data.contact_phone || ""
+        };
+      } catch (error) {
+        console.error("Error in site query:", error);
+        toast.error("Failed to load site details");
         throw error;
       }
-      
-      if (!data) {
-        console.error("No site found with ID:", id);
-        throw new Error("Site not found");
-      }
-      
-      console.log("Site data retrieved:", data);
-      
-      return {
-        id: data.id,
-        name: data.name,
-        location: data.location,
-        country: data.country,
-        address: data.address || "",
-        contactName: data.contact_name || "",
-        contactEmail: data.contact_email || "",
-        contactPhone: data.contact_phone || ""
-      };
     }
   });
   
@@ -64,32 +72,38 @@ const SiteDetail = () => {
     queryFn: async () => {
       console.log("Fetching equipment for site:", id);
       
-      const { data, error } = await supabase
-        .from("equipment")
-        .select("*")
-        .eq("site_id", id);
-      
-      if (error) {
-        console.error("Error fetching equipment:", error);
-        throw error;
+      try {
+        const { data, error } = await supabase
+          .from("equipment")
+          .select("*")
+          .eq("site_id", id);
+        
+        if (error) {
+          console.error("Error fetching equipment:", error);
+          throw error;
+        }
+        
+        console.log("Equipment data retrieved:", data);
+        
+        return data.map(item => ({
+          id: item.id,
+          name: item.name,
+          siteId: item.site_id || "",
+          type: item.type,
+          model: item.model,
+          manufacturer: item.manufacturer,
+          ipAddress: item.ip_address || "",
+          macAddress: item.mac_address || "",
+          firmware: item.firmware || "",
+          installDate: item.install_date || "",
+          status: item.status,
+          netbios: item.netbios || ""
+        } as Equipment));
+      } catch (error) {
+        console.error("Error in equipment query:", error);
+        toast.error("Failed to load equipment data");
+        return [];
       }
-      
-      console.log("Equipment data retrieved:", data);
-      
-      return data.map(item => ({
-        id: item.id,
-        name: item.name,
-        siteId: item.site_id || "",
-        type: item.type,
-        model: item.model,
-        manufacturer: item.manufacturer,
-        ipAddress: item.ip_address || "",
-        macAddress: item.mac_address || "",
-        firmware: item.firmware || "",
-        installDate: item.install_date || "",
-        status: item.status,
-        netbios: item.netbios || ""
-      } as Equipment));
     }
   });
   
@@ -100,28 +114,34 @@ const SiteDetail = () => {
     queryFn: async () => {
       console.log("Fetching connections for site:", id);
       
-      const { data, error } = await supabase
-        .from("network_connections")
-        .select("*")
-        .eq("site_id", id);
-      
-      if (error) {
-        console.error("Error fetching connections:", error);
-        throw error;
+      try {
+        const { data, error } = await supabase
+          .from("network_connections")
+          .select("*")
+          .eq("site_id", id);
+        
+        if (error) {
+          console.error("Error fetching connections:", error);
+          throw error;
+        }
+        
+        console.log("Connections data retrieved:", data);
+        
+        return data.map(item => ({
+          id: item.id,
+          siteId: item.site_id || "",
+          type: item.type,
+          provider: item.provider,
+          contractRef: item.contract_ref || "",
+          bandwidth: item.bandwidth || "",
+          sla: item.sla || "",
+          status: item.status
+        } as NetworkConnection));
+      } catch (error) {
+        console.error("Error in connections query:", error);
+        toast.error("Failed to load connection data");
+        return [];
       }
-      
-      console.log("Connections data retrieved:", data);
-      
-      return data.map(item => ({
-        id: item.id,
-        siteId: item.site_id || "",
-        type: item.type,
-        provider: item.provider,
-        contractRef: item.contract_ref || "",
-        bandwidth: item.bandwidth || "",
-        sla: item.sla || "",
-        status: item.status
-      } as NetworkConnection));
     }
   });
   
@@ -132,26 +152,32 @@ const SiteDetail = () => {
     queryFn: async () => {
       console.log("Fetching IP ranges for site:", id);
       
-      const { data, error } = await supabase
-        .from("ip_ranges")
-        .select("*")
-        .eq("site_id", id);
-      
-      if (error) {
-        console.error("Error fetching IP ranges:", error);
-        throw error;
+      try {
+        const { data, error } = await supabase
+          .from("ip_ranges")
+          .select("*")
+          .eq("site_id", id);
+        
+        if (error) {
+          console.error("Error fetching IP ranges:", error);
+          throw error;
+        }
+        
+        console.log("IP ranges data retrieved:", data);
+        
+        return data.map(item => ({
+          id: item.id,
+          siteId: item.site_id || "",
+          range: item.range,
+          description: item.description || "",
+          isReserved: item.is_reserved || false,
+          dhcpScope: item.dhcp_scope || false
+        } as IPRange));
+      } catch (error) {
+        console.error("Error in IP ranges query:", error);
+        toast.error("Failed to load IP range data");
+        return [];
       }
-      
-      console.log("IP ranges data retrieved:", data);
-      
-      return data.map(item => ({
-        id: item.id,
-        siteId: item.site_id || "",
-        range: item.range,
-        description: item.description || "",
-        isReserved: item.is_reserved || false,
-        dhcpScope: item.dhcp_scope || false
-      } as IPRange));
     }
   });
 
