@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { EquipmentType, Status } from "@/types/types";
+import { EquipmentType, Status, Equipment } from "@/types/types";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -25,11 +24,35 @@ interface EquipmentFormProps {
     netbios: string;
     siteId: string;
   };
-  mode: "add" | "edit";
+  initialValues?: {
+    name: string;
+    type: EquipmentType;
+    model: string;
+    manufacturer: string;
+    ipAddress: string;
+    macAddress: string;
+    firmware: string;
+    status: Status;
+    netbios: string;
+    siteId: string;
+    installDate: string;
+  };
+  mode?: "add" | "edit";
   equipmentId?: string;
+  onSubmit?: (data: Omit<Equipment, "id">) => Promise<void>;
+  isSubmitting?: boolean;
+  onCancel?: () => void;
 }
 
-const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) => {
+const EquipmentForm = ({ 
+  initialData, 
+  initialValues, 
+  mode = "add", 
+  equipmentId,
+  onSubmit,
+  isSubmitting: externalIsSubmitting,
+  onCancel 
+}: EquipmentFormProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { session } = useAuth();
@@ -39,18 +62,21 @@ const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) =
   const [errors, setErrors] = useState<{
     ipAddress?: string;
   }>({});
-  const [equipmentData, setEquipmentData] = useState({
-    name: initialData?.name || "",
-    type: initialData?.type || "router" as EquipmentType,
-    model: initialData?.model || "",
-    manufacturer: initialData?.manufacturer || "",
-    ipAddress: initialData?.ipAddress || "",
-    macAddress: initialData?.macAddress || "",
-    firmware: initialData?.firmware || "",
-    status: initialData?.status || "active" as Status,
-    netbios: initialData?.netbios || "",
-    siteId: initialData?.siteId || "not_deployed" // Changed from empty string to "not_deployed"
-  });
+  
+  const initialEquipmentData = initialData || initialValues || {
+    name: "",
+    type: "router" as EquipmentType,
+    model: "",
+    manufacturer: "",
+    ipAddress: "",
+    macAddress: "",
+    firmware: "",
+    status: "active" as Status,
+    netbios: "",
+    siteId: "not_deployed"
+  };
+  
+  const [equipmentData, setEquipmentData] = useState(initialEquipmentData);
 
   useEffect(() => {
     const fetchSites = async () => {
@@ -81,7 +107,6 @@ const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) =
   const validateIPAddress = (ipAddress: string): boolean => {
     if (!ipAddress) return true; // Allow empty IP address
     
-    // Regular expression for validating IPv4 address
     const ipv4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
     return ipv4Regex.test(ipAddress);
   };
@@ -90,7 +115,6 @@ const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) =
     const { name, value } = e.target;
     setEquipmentData(prev => ({ ...prev, [name]: value }));
     
-    // Validate IP address field
     if (name === "ipAddress") {
       if (value && !validateIPAddress(value)) {
         setErrors(prev => ({ ...prev, ipAddress: "Format d'adresse IP invalide (ex: 192.168.1.1)" }));
@@ -107,9 +131,18 @@ const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate IP address before submission
-    if (equipmentData.ipAddress && !validateIPAddress(equipmentData.ipAddress)) {
-      setErrors(prev => ({ ...prev, ipAddress: "Format d'adresse IP invalide (ex:, 192.168.1.1)" }));
+    if (onSubmit) {
+      if (equipmentData.ipAddress && !validateIPAddress(equipmentData.ipAddress)) {
+        setErrors(prev => ({ ...prev, ipAddress: "Format d'adresse IP invalide (ex:, 192.168.1.1)" }));
+        return;
+      }
+      
+      const formattedData = {
+        ...equipmentData,
+        siteId: equipmentData.siteId === "not_deployed" ? "" : equipmentData.siteId
+      };
+      
+      await onSubmit(formattedData as Omit<Equipment, "id">);
       return;
     }
     
@@ -120,7 +153,6 @@ const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) =
         throw new Error("Vous devez être connecté pour ajouter un équipement");
       }
 
-      // Convert camelCase to snake_case for Supabase
       const dbData = {
         name: equipmentData.name,
         type: equipmentData.type,
@@ -132,7 +164,7 @@ const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) =
         status: equipmentData.status,
         netbios: equipmentData.netbios,
         user_id: session.user.id,
-        site_id: equipmentData.siteId === "not_deployed" ? null : equipmentData.siteId // Use null if not deployed
+        site_id: equipmentData.siteId === "not_deployed" ? null : equipmentData.siteId
       };
 
       let result;
@@ -335,12 +367,15 @@ const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) =
           <Button 
             variant="outline" 
             type="button"
-            onClick={() => navigate("/equipment")}
+            onClick={onCancel ? onCancel : () => navigate("/equipment")}
           >
             Annuler
           </Button>
-          <Button type="submit" disabled={isSubmitting || Object.values(errors).some(error => !!error)}>
-            {isSubmitting ? (
+          <Button 
+            type="submit" 
+            disabled={(externalIsSubmitting !== undefined ? externalIsSubmitting : isSubmitting) || Object.values(errors).some(error => !!error)}
+          >
+            {(externalIsSubmitting !== undefined ? externalIsSubmitting : isSubmitting) ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 {mode === "add" ? "Enregistrement..." : "Mise à jour..."}
@@ -356,3 +391,4 @@ const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) =
 };
 
 export default EquipmentForm;
+
