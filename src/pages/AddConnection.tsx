@@ -24,7 +24,7 @@ const AddConnection = () => {
     status: "active" as const
   };
 
-  const handleSubmit = async (data: Omit<NetworkConnection, "id" | "siteName">) => {
+  const handleSubmit = async (data: any) => {
     await addConnection.mutateAsync(data);
     // Navigate back to site detail if siteId is provided
     if (siteId) {

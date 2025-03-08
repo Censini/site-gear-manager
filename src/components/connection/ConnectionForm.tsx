@@ -21,8 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAddConnection } from "@/hooks/useAddConnection";
-import { useUpdateConnection } from "@/hooks/useUpdateConnection";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { NetworkConnection } from "@/types/types";
@@ -47,27 +45,34 @@ type ConnectionFormValues = z.infer<typeof connectionSchema>;
 
 interface ConnectionFormProps {
   connectionToEdit?: NetworkConnection;
+  initialValues?: ConnectionFormValues;
+  onSubmit?: (data: ConnectionFormValues) => void;
+  isSubmitting?: boolean;
+  onCancel?: () => void;
 }
 
-const ConnectionForm = ({ connectionToEdit }: ConnectionFormProps) => {
+const ConnectionForm = ({ 
+  connectionToEdit, 
+  initialValues, 
+  onSubmit, 
+  isSubmitting = false, 
+  onCancel 
+}: ConnectionFormProps) => {
   const navigate = useNavigate();
-  const { mutate: addConnection, isPending: isAddPending } = useAddConnection();
-  const { mutate: updateConnection, isPending: isUpdatePending } = useUpdateConnection();
   
-  const isEditing = !!connectionToEdit;
-  const isPending = isEditing ? isUpdatePending : isAddPending;
+  const defaultValues = initialValues || {
+    siteId: connectionToEdit?.siteId || "",
+    type: connectionToEdit?.type || "fiber",
+    provider: connectionToEdit?.provider || "",
+    contractRef: connectionToEdit?.contractRef || "",
+    bandwidth: connectionToEdit?.bandwidth || "",
+    sla: connectionToEdit?.sla || "",
+    status: connectionToEdit?.status || "active",
+  };
   
   const form = useForm<ConnectionFormValues>({
     resolver: zodResolver(connectionSchema),
-    defaultValues: {
-      siteId: connectionToEdit?.siteId || "",
-      type: connectionToEdit?.type || "fiber",
-      provider: connectionToEdit?.provider || "",
-      contractRef: connectionToEdit?.contractRef || "",
-      bandwidth: connectionToEdit?.bandwidth || "",
-      sla: connectionToEdit?.sla || "",
-      status: connectionToEdit?.status || "active",
-    },
+    defaultValues
   });
 
   const { data: sites = [] } = useQuery({
@@ -86,41 +91,15 @@ const ConnectionForm = ({ connectionToEdit }: ConnectionFormProps) => {
     },
   });
 
-  const onSubmit = (data: ConnectionFormValues) => {
-    const connectionData: Omit<NetworkConnection, "id" | "siteName"> = {
-      siteId: data.siteId,
-      type: data.type,
-      provider: data.provider,
-      contractRef: data.contractRef || "",
-      bandwidth: data.bandwidth || "",
-      sla: data.sla || "",
-      status: data.status,
-    };
-
-    if (isEditing && connectionToEdit) {
-      updateConnection(
-        { 
-          id: connectionToEdit.id, 
-          connectionData 
-        }, 
-        {
-          onSuccess: () => {
-            navigate("/connections");
-          },
-        }
-      );
-    } else {
-      addConnection(connectionData, {
-        onSuccess: () => {
-          navigate("/connections");
-        },
-      });
+  const handleFormSubmit = (data: ConnectionFormValues) => {
+    if (onSubmit) {
+      onSubmit(data);
     }
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="siteId"
@@ -264,14 +243,14 @@ const ConnectionForm = ({ connectionToEdit }: ConnectionFormProps) => {
           <Button 
             type="button" 
             variant="outline" 
-            onClick={() => navigate("/connections")}
+            onClick={onCancel || (() => navigate("/connections"))}
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isPending}>
-            {isPending 
-              ? isEditing ? "Saving..." : "Adding..." 
-              : isEditing ? "Save Changes" : "Save Connection"
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting 
+              ? connectionToEdit ? "Saving..." : "Adding..." 
+              : connectionToEdit ? "Save Changes" : "Save Connection"
             }
           </Button>
         </div>

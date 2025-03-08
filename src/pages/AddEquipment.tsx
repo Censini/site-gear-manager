@@ -71,7 +71,7 @@ const AddEquipment = () => {
     netbios: ""
   };
 
-  const handleSubmit = async (data: Omit<Equipment, "id">) => {
+  const handleSubmit = async (data: any) => {
     await addEquipment.mutateAsync(data);
     // Navigate back to site detail if siteId is provided
     if (siteId) {
