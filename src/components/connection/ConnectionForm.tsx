@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,6 +23,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { NetworkConnection } from "@/types/types";
+import { Loader2 } from "lucide-react";
 
 const connectionSchema = z.object({
   siteId: z.string({
