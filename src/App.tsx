@@ -13,6 +13,7 @@ import EditEquipment from "./pages/EditEquipment";
 import Sites from "./pages/Sites";
 import SiteDetail from "./pages/SiteDetail";
 import AddSite from "./pages/AddSite";
+import EditSite from "./pages/EditSite";
 import IPAM from "./pages/IPAM";
 import Connections from "./pages/Connections";
 import NotFound from "./pages/NotFound";
@@ -65,6 +66,11 @@ const App = () => (
               <Route path="/sites/add" element={
                 <MainLayout>
                   <AddSite />
+                </MainLayout>
+              } />
+              <Route path="/sites/edit/:id" element={
+                <MainLayout>
+                  <EditSite />
                 </MainLayout>
               } />
               <Route path="/sites/:id" element={
