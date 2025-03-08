@@ -11,6 +11,7 @@ import IPRangesTab from "./IPRangesTab";
 import { Equipment, NetworkConnection, IPRange } from "@/types/types";
 import SelectExistingEquipment from "../equipment/SelectExistingEquipment";
 import SelectExistingConnection from "../connection/SelectExistingConnection";
+import SelectExistingIPRange from "../iprange/SelectExistingIPRange";
 
 interface SiteResourcesCardProps {
   siteId: string;
@@ -24,6 +25,7 @@ const SiteResourcesCard = ({ siteId, equipment, connections, ipRanges, onRefresh
   const navigate = useNavigate();
   const [showExistingEquipment, setShowExistingEquipment] = useState(false);
   const [showExistingConnection, setShowExistingConnection] = useState(false);
+  const [showExistingIPRange, setShowExistingIPRange] = useState(false);
   
   const handleAddEquipment = () => {
     navigate(`/equipment/add?siteId=${siteId}`);
@@ -44,6 +46,11 @@ const SiteResourcesCard = ({ siteId, equipment, connections, ipRanges, onRefresh
 
   const handleConnectionSuccess = () => {
     setShowExistingConnection(false);
+    if (onRefresh) onRefresh();
+  };
+  
+  const handleIPRangeSuccess = () => {
+    setShowExistingIPRange(false);
     if (onRefresh) onRefresh();
   };
   
@@ -110,13 +117,27 @@ const SiteResourcesCard = ({ siteId, equipment, connections, ipRanges, onRefresh
           </TabsContent>
           
           <TabsContent value="ip">
-            <div className="mb-4 flex justify-end">
-              <Button onClick={handleAddIPRange} size="sm">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add IP Range
-              </Button>
-            </div>
-            <IPRangesTab ipRanges={ipRanges} />
+            {showExistingIPRange ? (
+              <SelectExistingIPRange
+                siteId={siteId}
+                onCancel={() => setShowExistingIPRange(false)}
+                onSuccess={handleIPRangeSuccess}
+              />
+            ) : (
+              <>
+                <div className="mb-4 flex justify-end gap-2">
+                  <Button onClick={() => setShowExistingIPRange(true)} size="sm" variant="outline">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Assign Existing
+                  </Button>
+                  <Button onClick={handleAddIPRange} size="sm">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add IP Range
+                  </Button>
+                </div>
+                <IPRangesTab ipRanges={ipRanges} onRefresh={onRefresh} />
+              </>
+            )}
           </TabsContent>
         </CardContent>
       </Tabs>
