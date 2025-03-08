@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, Pencil } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -80,12 +80,13 @@ const Connections = () => {
               <TableHead>Bandwidth</TableHead>
               <TableHead>SLA</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="w-[80px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={8} className="h-24 text-center">
                   Loading connections...
                 </TableCell>
               </TableRow>
@@ -101,11 +102,23 @@ const Connections = () => {
                   <TableCell>
                     <StatusBadge status={connection.status} />
                   </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      asChild
+                      className="h-8 w-8"
+                    >
+                      <Link to={`/connections/edit/${connection.id}`}>
+                        <Pencil className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={8} className="h-24 text-center">
                   No connections found.
                 </TableCell>
               </TableRow>

@@ -17,10 +17,10 @@ import EditSite from "./pages/EditSite";
 import IPAM from "./pages/IPAM";
 import Connections from "./pages/Connections";
 import AddConnection from "./pages/AddConnection";
+import EditConnection from "./pages/EditConnection";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
@@ -88,6 +88,11 @@ function App() {
                 <Route path="/connections/add" element={
                   <MainLayout>
                     <AddConnection />
+                  </MainLayout>
+                } />
+                <Route path="/connections/edit/:id" element={
+                  <MainLayout>
+                    <EditConnection />
                   </MainLayout>
                 } />
                 <Route path="/ipam" element={

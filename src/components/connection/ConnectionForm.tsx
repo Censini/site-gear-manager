@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAddConnection } from "@/hooks/useAddConnection";
+import { useUpdateConnection } from "@/hooks/useUpdateConnection";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { NetworkConnection } from "@/types/types";
@@ -44,19 +45,28 @@ const connectionSchema = z.object({
 
 type ConnectionFormValues = z.infer<typeof connectionSchema>;
 
-const ConnectionForm = () => {
+interface ConnectionFormProps {
+  connectionToEdit?: NetworkConnection;
+}
+
+const ConnectionForm = ({ connectionToEdit }: ConnectionFormProps) => {
   const navigate = useNavigate();
-  const { mutate: addConnection, isPending } = useAddConnection();
+  const { mutate: addConnection, isPending: isAddPending } = useAddConnection();
+  const { mutate: updateConnection, isPending: isUpdatePending } = useUpdateConnection();
+  
+  const isEditing = !!connectionToEdit;
+  const isPending = isEditing ? isUpdatePending : isAddPending;
   
   const form = useForm<ConnectionFormValues>({
     resolver: zodResolver(connectionSchema),
     defaultValues: {
-      type: "fiber",
-      provider: "",
-      contractRef: "",
-      bandwidth: "",
-      sla: "",
-      status: "active",
+      siteId: connectionToEdit?.siteId || "",
+      type: connectionToEdit?.type || "fiber",
+      provider: connectionToEdit?.provider || "",
+      contractRef: connectionToEdit?.contractRef || "",
+      bandwidth: connectionToEdit?.bandwidth || "",
+      sla: connectionToEdit?.sla || "",
+      status: connectionToEdit?.status || "active",
     },
   });
 
@@ -87,11 +97,25 @@ const ConnectionForm = () => {
       status: data.status,
     };
 
-    addConnection(connectionData, {
-      onSuccess: () => {
-        navigate("/connections");
-      },
-    });
+    if (isEditing && connectionToEdit) {
+      updateConnection(
+        { 
+          id: connectionToEdit.id, 
+          connectionData 
+        }, 
+        {
+          onSuccess: () => {
+            navigate("/connections");
+          },
+        }
+      );
+    } else {
+      addConnection(connectionData, {
+        onSuccess: () => {
+          navigate("/connections");
+        },
+      });
+    }
   };
 
   return (
@@ -245,7 +269,10 @@ const ConnectionForm = () => {
             Cancel
           </Button>
           <Button type="submit" disabled={isPending}>
-            {isPending ? "Saving..." : "Save Connection"}
+            {isPending 
+              ? isEditing ? "Saving..." : "Adding..." 
+              : isEditing ? "Save Changes" : "Save Connection"
+            }
           </Button>
         </div>
       </form>
