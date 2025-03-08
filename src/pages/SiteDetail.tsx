@@ -1,6 +1,6 @@
 
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,13 +8,37 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import StatusBadge from "@/components/ui/StatusBadge";
 import EquipmentTypeIcon from "@/components/ui/EquipmentTypeIcon";
-import { ArrowLeft, Edit, Building, Mail, MapPin, Phone, Loader2 } from "lucide-react";
+import { 
+  ArrowLeft, 
+  Edit, 
+  Building, 
+  Mail, 
+  MapPin, 
+  Phone, 
+  Loader2,
+  Trash2,
+  AlertTriangle 
+} from "lucide-react";
 import { Equipment, NetworkConnection, IPRange } from "@/types/types";
 import { toast } from "sonner";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useState } from "react";
 
 const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // More debugging logs
   console.log("Site ID from URL:", id);
@@ -64,6 +88,30 @@ const SiteDetail = () => {
       }
     }
   });
+  
+  // Handle site deletion
+  const handleDeleteSite = async () => {
+    if (!id) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("sites")
+        .delete()
+        .eq("id", id);
+      
+      if (error) throw error;
+      
+      toast.success("Site deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["sites"] });
+      navigate("/sites");
+    } catch (error) {
+      console.error("Error deleting site:", error);
+      toast.error("Failed to delete site");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
   
   // Fetch equipment data for this site
   const { data: equipment = [], isLoading: isLoadingEquipment } = useQuery({
@@ -214,10 +262,56 @@ const SiteDetail = () => {
           </Button>
           <h1 className="text-3xl font-bold tracking-tight">{site.name}</h1>
         </div>
-        <Button variant="outline" className="flex items-center gap-1 w-full md:w-auto">
-          <Edit className="h-4 w-4" />
-          <span>Edit</span>
-        </Button>
+        <div className="flex gap-2 w-full md:w-auto">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-1 w-full md:w-auto"
+            onClick={() => navigate(`/sites/edit/${id}`)}
+          >
+            <Edit className="h-4 w-4" />
+            <span>Edit</span>
+          </Button>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="destructive" 
+                className="flex items-center gap-1 w-full md:w-auto"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Delete</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                  Delete Site
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this site? This action cannot be undone and will also delete all associated data like equipment, connections, and IP ranges.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handleDeleteSite}
+                  disabled={isDeleting}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete Site"
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
       
       <div className="grid gap-6 md:grid-cols-3">
