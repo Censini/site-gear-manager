@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Equipment, EquipmentType, Status } from "@/types/types";
@@ -103,7 +104,7 @@ const EquipmentTable = ({ equipmentList, onAddEquipment }: EquipmentTableProps) 
             </SelectContent>
           </Select>
           <Button 
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 w-full sm:w-auto"
             onClick={onAddEquipment}
           >
             <Plus className="h-4 w-4" />

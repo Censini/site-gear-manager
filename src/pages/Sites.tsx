@@ -2,16 +2,29 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import SiteCard from "@/components/cards/SiteCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Plus, Loader2 } from "lucide-react";
+import { Search, Plus, Loader2, Edit, Trash2 } from "lucide-react";
 import { Site } from "@/types/types";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 
 const Sites = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [siteToDelete, setSiteToDelete] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -72,6 +85,82 @@ const Sites = () => {
     site.country.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Handle site deletion
+  const handleDeleteSite = async (siteId: string) => {
+    if (!siteId) return;
+    
+    setIsDeleting(true);
+    setSiteToDelete(siteId);
+    
+    try {
+      // First check if there are related records
+      const { data: equipmentData } = await supabase
+        .from("equipment")
+        .select("id")
+        .eq("site_id", siteId);
+        
+      const { data: connectionsData } = await supabase
+        .from("network_connections")
+        .select("id")
+        .eq("site_id", siteId);
+        
+      const { data: ipRangesData } = await supabase
+        .from("ip_ranges")
+        .select("id")
+        .eq("site_id", siteId);
+      
+      // Delete related records if they exist
+      if (equipmentData && equipmentData.length > 0) {
+        await supabase
+          .from("equipment")
+          .delete()
+          .eq("site_id", siteId);
+      }
+      
+      if (connectionsData && connectionsData.length > 0) {
+        await supabase
+          .from("network_connections")
+          .delete()
+          .eq("site_id", siteId);
+      }
+      
+      if (ipRangesData && ipRangesData.length > 0) {
+        await supabase
+          .from("ip_ranges")
+          .delete()
+          .eq("site_id", siteId);
+      }
+      
+      // Delete the site
+      const { error } = await supabase
+        .from("sites")
+        .delete()
+        .eq("id", siteId);
+      
+      if (error) throw error;
+      
+      // Update cache
+      queryClient.invalidateQueries({ queryKey: ["sites"] });
+      
+      toast({
+        title: "Site deleted",
+        description: "Site has been successfully deleted",
+      });
+      
+      refetch();
+    } catch (error) {
+      console.error("Error deleting site:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete site. Please try again.",
+      });
+    } finally {
+      setIsDeleting(false);
+      setSiteToDelete(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -107,7 +196,72 @@ const Sites = () => {
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {filteredSites.length > 0 ? (
           filteredSites.map((site) => (
-            <SiteCard key={site.id} site={site} />
+            <Card key={site.id} className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="cursor-pointer hover:text-primary" onClick={() => navigate(`/sites/${site.id}`)}>
+                  {site.name}
+                </CardTitle>
+              </CardHeader>
+              
+              <CardContent className="pb-2">
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>{site.location}, {site.country}</p>
+                  {site.address && <p>{site.address}</p>}
+                  {site.contactName && <p>Contact: {site.contactName}</p>}
+                </div>
+              </CardContent>
+              
+              <CardFooter className="flex justify-end gap-2 pt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center gap-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/sites/edit/${site.id}`);
+                  }}
+                >
+                  <Edit className="h-4 w-4" />
+                  <span>Edit</span>
+                </Button>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild onClick={(e) => e.stopPropagation()}>
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      className="flex items-center gap-1"
+                      disabled={isDeleting && siteToDelete === site.id}
+                    >
+                      {isDeleting && siteToDelete === site.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                      <span>Delete</span>
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete the site "{site.name}" and all of its associated data.
+                        This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => handleDeleteSite(site.id)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </CardFooter>
+            </Card>
           ))
         ) : (
           <div className="col-span-full text-center py-10">
