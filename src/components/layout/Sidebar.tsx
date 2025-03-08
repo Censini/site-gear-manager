@@ -7,7 +7,6 @@ import {
   Building, 
   Network, 
   Wifi, 
-  Globe, 
   Upload, 
   Download,
   Settings 
@@ -19,7 +18,6 @@ const sidebarItems = [
   { name: "Sites", path: "/sites", icon: Building },
   { name: "Connections", path: "/connections", icon: Network },
   { name: "IPAM", path: "/ipam", icon: Wifi },
-  { name: "Map View", path: "/map", icon: Globe },
   { name: "Import", path: "/import", icon: Upload },
   { name: "Export", path: "/export", icon: Download },
   { name: "Settings", path: "/settings", icon: Settings },
