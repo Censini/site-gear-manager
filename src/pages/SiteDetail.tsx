@@ -15,19 +15,34 @@ const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
+  // Ajoutons des logs pour déboguer
+  console.log("Site ID from URL:", id);
+  
   // Fetch site data from Supabase
   const { data: site, isLoading: isLoadingSite, error: siteError } = useQuery({
     queryKey: ["site", id],
     queryFn: async () => {
       if (!id) throw new Error("No site ID provided");
       
+      console.log("Fetching site with ID:", id);
+      
       const { data, error } = await supabase
         .from("sites")
         .select("*")
         .eq("id", id)
-        .single();
+        .maybeSingle(); // Utilisons maybeSingle au lieu de single pour éviter les erreurs
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching site:", error);
+        throw error;
+      }
+      
+      if (!data) {
+        console.error("No site found with ID:", id);
+        throw new Error("Site not found");
+      }
+      
+      console.log("Site data retrieved:", data);
       
       return {
         id: data.id,
@@ -47,12 +62,19 @@ const SiteDetail = () => {
     queryKey: ["equipment", "site", id],
     enabled: !!id,
     queryFn: async () => {
+      console.log("Fetching equipment for site:", id);
+      
       const { data, error } = await supabase
         .from("equipment")
         .select("*")
         .eq("site_id", id);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching equipment:", error);
+        throw error;
+      }
+      
+      console.log("Equipment data retrieved:", data);
       
       return data.map(item => ({
         id: item.id,
@@ -76,12 +98,19 @@ const SiteDetail = () => {
     queryKey: ["connections", "site", id],
     enabled: !!id,
     queryFn: async () => {
+      console.log("Fetching connections for site:", id);
+      
       const { data, error } = await supabase
         .from("network_connections")
         .select("*")
         .eq("site_id", id);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching connections:", error);
+        throw error;
+      }
+      
+      console.log("Connections data retrieved:", data);
       
       return data.map(item => ({
         id: item.id,
@@ -101,12 +130,19 @@ const SiteDetail = () => {
     queryKey: ["ipRanges", "site", id],
     enabled: !!id,
     queryFn: async () => {
+      console.log("Fetching IP ranges for site:", id);
+      
       const { data, error } = await supabase
         .from("ip_ranges")
         .select("*")
         .eq("site_id", id);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching IP ranges:", error);
+        throw error;
+      }
+      
+      console.log("IP ranges data retrieved:", data);
       
       return data.map(item => ({
         id: item.id,
