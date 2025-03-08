@@ -3,16 +3,12 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import EquipmentTable from "@/components/equipment/EquipmentTable";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Equipment } from "@/types/types";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
 const EquipmentPage = () => {
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
 
   const { data: equipmentList, error, isLoading: isQueryLoading } = useQuery({
     queryKey: ["equipment"],

@@ -8,9 +8,21 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StatusBadge from "@/components/ui/StatusBadge";
 import EquipmentTypeIcon from "@/components/ui/EquipmentTypeIcon";
-import { Search, Plus } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Search, Plus, Edit, Trash2, Loader2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 
 interface EquipmentTableProps {
   equipmentList: Equipment[];
@@ -19,9 +31,13 @@ interface EquipmentTableProps {
 
 const EquipmentTable = ({ equipmentList, onAddEquipment }: EquipmentTableProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
   const [typeFilter, setTypeFilter] = useState<EquipmentType | "all">("all");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [equipmentToDelete, setEquipmentToDelete] = useState<string | null>(null);
 
   const { data: sites } = useQuery({
     queryKey: ["sites"],
@@ -55,6 +71,39 @@ const EquipmentTable = ({ equipmentList, onAddEquipment }: EquipmentTableProps) 
     
     return matchesSearch && matchesStatus && matchesType;
   });
+
+  const handleDeleteEquipment = async (equipmentId: string) => {
+    if (!equipmentId) return;
+    
+    setIsDeleting(true);
+    setEquipmentToDelete(equipmentId);
+    
+    try {
+      const { error } = await supabase
+        .from("equipment")
+        .delete()
+        .eq("id", equipmentId);
+      
+      if (error) throw error;
+      
+      queryClient.invalidateQueries({ queryKey: ["equipment"] });
+      
+      toast({
+        title: "Equipment deleted",
+        description: "Equipment has been successfully deleted",
+      });
+    } catch (error) {
+      console.error("Error deleting equipment:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete equipment. Please try again.",
+      });
+    } finally {
+      setIsDeleting(false);
+      setEquipmentToDelete(null);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -124,18 +173,18 @@ const EquipmentTable = ({ equipmentList, onAddEquipment }: EquipmentTableProps) 
               <TableHead>Model</TableHead>
               <TableHead>Site</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredEquipment.length > 0 ? (
               filteredEquipment.map((item) => (
-                <TableRow 
-                  key={item.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => navigate(`/equipment/${item.id}`)}
-                >
-                  <TableCell>
-                    <div className="font-medium">{item.name}</div>
+                <TableRow key={item.id}>
+                  <TableCell 
+                    className="font-medium cursor-pointer hover:text-primary"
+                    onClick={() => navigate(`/equipment/${item.id}`)}
+                  >
+                    {item.name}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -150,11 +199,60 @@ const EquipmentTable = ({ equipmentList, onAddEquipment }: EquipmentTableProps) 
                   <TableCell>
                     <StatusBadge status={item.status} />
                   </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex items-center gap-1"
+                        onClick={() => navigate(`/equipment/edit/${item.id}`)}
+                      >
+                        <Edit className="h-4 w-4" />
+                        <span className="sr-only sm:not-sr-only sm:inline-block">Edit</span>
+                      </Button>
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            className="flex items-center gap-1"
+                            disabled={isDeleting && equipmentToDelete === item.id}
+                          >
+                            {isDeleting && equipmentToDelete === item.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                            <span className="sr-only sm:not-sr-only sm:inline-block">Delete</span>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently delete the equipment "{item.name}".
+                              This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => handleDeleteEquipment(item.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={8} className="h-24 text-center">
                   No equipment found.
                 </TableCell>
               </TableRow>
