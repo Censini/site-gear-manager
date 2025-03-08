@@ -20,6 +20,8 @@ import AddConnection from "./pages/AddConnection";
 import EditConnection from "./pages/EditConnection";
 import AddIPRange from "./pages/AddIPRange";
 import EditIPRange from "./pages/EditIPRange";
+import Import from "./pages/Import";
+import Export from "./pages/Export";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -111,6 +113,16 @@ function App() {
                 <Route path="/ipam/edit/:id" element={
                   <MainLayout>
                     <EditIPRange />
+                  </MainLayout>
+                } />
+                <Route path="/import" element={
+                  <MainLayout>
+                    <Import />
+                  </MainLayout>
+                } />
+                <Route path="/export" element={
+                  <MainLayout>
+                    <Export />
                   </MainLayout>
                 } />
               </Route>

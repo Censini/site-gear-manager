@@ -1,307 +1,167 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { ExportFormat, exportData } from '@/utils/exportUtils';
-import { Loader2, DownloadCloud, FileJson, FileSpreadsheet, FileText } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { Download, FileJson, FileSpreadsheet, FileText } from "lucide-react";
+import { exportToJSON, exportToCSV, exportToMarkdown } from "@/utils/exportUtils";
 
 const Export = () => {
-  const [exportFormat, setExportFormat] = useState<ExportFormat>('json');
-  const [filename, setFilename] = useState('export');
-
-  // Equipment query
-  const equipmentQuery = useQuery({
-    queryKey: ['equipment-export'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('equipment').select('*');
-      if (error) throw error;
-      return data;
-    },
-    enabled: false,
+  const [isExporting, setIsExporting] = useState({
+    json: false,
+    csv: false,
+    markdown: false
   });
 
-  // Sites query
-  const sitesQuery = useQuery({
-    queryKey: ['sites-export'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('sites').select('*');
-      if (error) throw error;
-      return data;
-    },
-    enabled: false,
-  });
-
-  // Connections query
-  const connectionsQuery = useQuery({
-    queryKey: ['connections-export'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('network_connections').select('*');
-      if (error) throw error;
-      return data;
-    },
-    enabled: false,
-  });
-
-  // IP Ranges query
-  const ipRangesQuery = useQuery({
-    queryKey: ['ip-ranges-export'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('ip_ranges').select('*');
-      if (error) throw error;
-      return data;
-    },
-    enabled: false,
-  });
-
-  const handleExport = async (
-    queryFn: () => Promise<any>, 
-    entityName: string,
-    customFilename?: string
-  ) => {
+  const handleExport = async (format: "json" | "csv" | "markdown") => {
+    setIsExporting(prev => ({ ...prev, [format]: true }));
+    
     try {
-      const data = await queryFn();
-      if (!data || data.length === 0) {
-        toast.warning(`No ${entityName} data to export`);
-        return;
+      let filename = "";
+      const timestamp = new Date().toISOString().split("T")[0];
+      
+      if (format === "json") {
+        filename = `network-data-${timestamp}.json`;
+        await exportToJSON(filename);
+      } else if (format === "csv") {
+        filename = `network-data-${timestamp}.csv`;
+        await exportToCSV(filename);
+      } else if (format === "markdown") {
+        filename = `network-data-${timestamp}.md`;
+        await exportToMarkdown(filename);
       }
       
-      exportData(
-        data, 
-        exportFormat, 
-        customFilename || `${entityName}-${filename}`,
-        `${entityName} Data`
-      );
-      
-      toast.success(`Successfully exported ${data.length} ${entityName}`);
+      toast.success(`Successfully exported data to ${format.toUpperCase()}`);
     } catch (error) {
-      console.error(`Error exporting ${entityName}:`, error);
-      toast.error(`Failed to export ${entityName}`, {
-        description: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  };
-
-  const formatIcon = () => {
-    switch (exportFormat) {
-      case 'json':
-        return <FileJson className="h-5 w-5" />;
-      case 'csv':
-        return <FileSpreadsheet className="h-5 w-5" />;
-      case 'markdown':
-        return <FileText className="h-5 w-5" />;
-      default:
-        return <DownloadCloud className="h-5 w-5" />;
+      console.error(`Export to ${format} error:`, error);
+      toast.error(`Failed to export to ${format.toUpperCase()}`);
+    } finally {
+      setIsExporting(prev => ({ ...prev, [format]: false }));
     }
   };
 
   return (
-    <div className="container max-w-6xl py-8">
-      <h1 className="text-3xl font-bold mb-6">Export Data</h1>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Export Options */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Export Options</CardTitle>
-            <CardDescription>Configure your export settings</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label>Export Format</Label>
-              <RadioGroup 
-                defaultValue="json" 
-                value={exportFormat}
-                onValueChange={(value) => setExportFormat(value as ExportFormat)}
-                className="flex flex-col space-y-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="json" id="json" />
-                  <Label htmlFor="json" className="flex items-center gap-2">
-                    <FileJson className="h-4 w-4" /> JSON
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="csv" id="csv" />
-                  <Label htmlFor="csv" className="flex items-center gap-2">
-                    <FileSpreadsheet className="h-4 w-4" /> CSV
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="markdown" id="markdown" />
-                  <Label htmlFor="markdown" className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" /> Markdown
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="filename">Base Filename</Label>
-              <Input 
-                id="filename" 
-                value={filename} 
-                onChange={(e) => setFilename(e.target.value)} 
-                placeholder="export"
-              />
-              <p className="text-xs text-muted-foreground">
-                Entity type will be automatically added to the filename
-              </p>
-            </div>
-
-            <Button 
-              variant="outline" 
-              className="w-full mt-4"
-              onClick={() => {
-                // Export all data as a single JSON object
-                const exportAll = async () => {
-                  const equipment = await equipmentQuery.refetch().then(r => r.data || []);
-                  const sites = await sitesQuery.refetch().then(r => r.data || []);
-                  const connections = await connectionsQuery.refetch().then(r => r.data || []);
-                  const ipRanges = await ipRangesQuery.refetch().then(r => r.data || []);
-                  
-                  const allData = {
-                    equipment,
-                    sites,
-                    connections,
-                    ipRanges
-                  };
-                  
-                  exportData([allData], exportFormat, `all-${filename}`, 'All Data');
-                  toast.success('Successfully exported all data');
-                };
-                
-                exportAll().catch(error => {
-                  console.error('Error exporting all data:', error);
-                  toast.error('Failed to export all data');
-                });
-              }}
-            >
-              Export All Data
-            </Button>
-          </CardContent>
-        </Card>
-        
-        {/* Export Entities */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Export Entities</CardTitle>
-            <CardDescription>Select which data you want to export</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="equipment">
-              <TabsList className="w-full">
-                <TabsTrigger value="equipment" className="flex-1">Equipment</TabsTrigger>
-                <TabsTrigger value="sites" className="flex-1">Sites</TabsTrigger>
-                <TabsTrigger value="connections" className="flex-1">Connections</TabsTrigger>
-                <TabsTrigger value="ipranges" className="flex-1">IP Ranges</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="equipment" className="mt-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Export Equipment</CardTitle>
-                    <CardDescription>
-                      Export all equipment data in your selected format
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button 
-                      className="w-full"
-                      onClick={() => handleExport(() => equipmentQuery.refetch().then(r => r.data), 'equipment')} 
-                      disabled={equipmentQuery.isFetching}
-                    >
-                      {equipmentQuery.isFetching ? (
-                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Loading...</>
-                      ) : (
-                        <>{formatIcon()} Export Equipment</>
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="sites" className="mt-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Export Sites</CardTitle>
-                    <CardDescription>
-                      Export all site data in your selected format
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button 
-                      className="w-full"
-                      onClick={() => handleExport(() => sitesQuery.refetch().then(r => r.data), 'sites')} 
-                      disabled={sitesQuery.isFetching}
-                    >
-                      {sitesQuery.isFetching ? (
-                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Loading...</>
-                      ) : (
-                        <>{formatIcon()} Export Sites</>
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="connections" className="mt-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Export Connections</CardTitle>
-                    <CardDescription>
-                      Export all network connection data in your selected format
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button 
-                      className="w-full"
-                      onClick={() => handleExport(() => connectionsQuery.refetch().then(r => r.data), 'connections')} 
-                      disabled={connectionsQuery.isFetching}
-                    >
-                      {connectionsQuery.isFetching ? (
-                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Loading...</>
-                      ) : (
-                        <>{formatIcon()} Export Connections</>
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="ipranges" className="mt-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Export IP Ranges</CardTitle>
-                    <CardDescription>
-                      Export all IP range data in your selected format
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button 
-                      className="w-full"
-                      onClick={() => handleExport(() => ipRangesQuery.refetch().then(r => r.data), 'ip-ranges')} 
-                      disabled={ipRangesQuery.isFetching}
-                    >
-                      {ipRangesQuery.isFetching ? (
-                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Loading...</>
-                      ) : (
-                        <>{formatIcon()} Export IP Ranges</>
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+    <div className="container mx-auto py-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Export Data</h1>
+        <p className="text-muted-foreground mt-1">
+          Export your network data in different formats
+        </p>
       </div>
+
+      <Tabs defaultValue="json" className="max-w-3xl">
+        <TabsList className="mb-4">
+          <TabsTrigger value="json">JSON</TabsTrigger>
+          <TabsTrigger value="csv">CSV</TabsTrigger>
+          <TabsTrigger value="markdown">Markdown</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="json">
+          <Card>
+            <CardHeader>
+              <CardTitle>Export to JSON</CardTitle>
+              <CardDescription>
+                Download all your network data in JSON format
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FileJson className="h-10 w-10 text-primary" />
+                  <div>
+                    <h3 className="font-medium">JSON Format</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Best for importing into other systems or backup
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  onClick={() => handleExport("json")}
+                  disabled={isExporting.json}
+                >
+                  {isExporting.json ? "Exporting..." : (
+                    <>
+                      <Download className="mr-2 h-4 w-4" />
+                      Export to JSON
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="csv">
+          <Card>
+            <CardHeader>
+              <CardTitle>Export to CSV</CardTitle>
+              <CardDescription>
+                Download your network data in CSV format for spreadsheet applications
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FileSpreadsheet className="h-10 w-10 text-primary" />
+                  <div>
+                    <h3 className="font-medium">CSV Format</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Compatible with Excel, Google Sheets, and other spreadsheet applications
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  onClick={() => handleExport("csv")}
+                  disabled={isExporting.csv}
+                >
+                  {isExporting.csv ? "Exporting..." : (
+                    <>
+                      <Download className="mr-2 h-4 w-4" />
+                      Export to CSV
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="markdown">
+          <Card>
+            <CardHeader>
+              <CardTitle>Export to Markdown</CardTitle>
+              <CardDescription>
+                Download your network data in Markdown format for documentation
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-10 w-10 text-primary" />
+                  <div>
+                    <h3 className="font-medium">Markdown Format</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Perfect for documentation, README files, or sharing on platforms like GitHub
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  onClick={() => handleExport("markdown")}
+                  disabled={isExporting.markdown}
+                >
+                  {isExporting.markdown ? "Exporting..." : (
+                    <>
+                      <Download className="mr-2 h-4 w-4" />
+                      Export to Markdown
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
