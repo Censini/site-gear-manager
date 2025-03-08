@@ -36,6 +36,9 @@ const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) =
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
   const [isLoadingSites, setIsLoadingSites] = useState(true);
+  const [errors, setErrors] = useState<{
+    ipAddress?: string;
+  }>({});
   const [equipmentData, setEquipmentData] = useState({
     name: initialData?.name || "",
     type: initialData?.type || "router" as EquipmentType,
@@ -58,6 +61,7 @@ const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) =
           .order("name");
         
         if (error) throw error;
+        console.log("Fetched sites:", data);
         setSites(data || []);
       } catch (error) {
         console.error("Error fetching sites:", error);
@@ -74,9 +78,26 @@ const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) =
     fetchSites();
   }, [toast]);
 
+  const validateIPAddress = (ipAddress: string): boolean => {
+    if (!ipAddress) return true; // Allow empty IP address
+    
+    // Regular expression for validating IPv4 address
+    const ipv4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+    return ipv4Regex.test(ipAddress);
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setEquipmentData(prev => ({ ...prev, [name]: value }));
+    
+    // Validate IP address field
+    if (name === "ipAddress") {
+      if (value && !validateIPAddress(value)) {
+        setErrors(prev => ({ ...prev, ipAddress: "Format d'adresse IP invalide (ex: 192.168.1.1)" }));
+      } else {
+        setErrors(prev => ({ ...prev, ipAddress: undefined }));
+      }
+    }
   };
 
   const handleSelectChange = (field: string, value: string) => {
@@ -85,6 +106,13 @@ const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate IP address before submission
+    if (equipmentData.ipAddress && !validateIPAddress(equipmentData.ipAddress)) {
+      setErrors(prev => ({ ...prev, ipAddress: "Format d'adresse IP invalide (ex:, 192.168.1.1)" }));
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
@@ -262,7 +290,11 @@ const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) =
                 placeholder="192.168.1.1" 
                 value={equipmentData.ipAddress}
                 onChange={handleChange}
+                className={errors.ipAddress ? "border-red-500" : ""}
               />
+              {errors.ipAddress && (
+                <p className="text-sm text-red-500">{errors.ipAddress}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -307,7 +339,7 @@ const EquipmentForm = ({ initialData, mode, equipmentId }: EquipmentFormProps) =
           >
             Annuler
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting || Object.values(errors).some(error => !!error)}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
