@@ -1,3 +1,4 @@
+
 import {
   BrowserRouter as Router,
   Routes,
@@ -6,13 +7,13 @@ import {
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Dashboard from "./pages/Dashboard";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
 import Sites from "./pages/Sites";
 import AddSite from "./pages/AddSite";
 import SiteDetail from "./pages/SiteDetail";
 import EquipmentDetail from "./pages/EquipmentDetail";
 import EditSite from "./pages/EditSite";
+// Import the Auth component instead of Login and Register
+import Auth from "./pages/Auth";
 
 function App() {
   return (
@@ -25,16 +26,17 @@ function App() {
 }
 
 function AppContent() {
-  const { currentUser } = useAuth();
+  const { session } = useAuth(); // Changed from currentUser to session
 
   const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-    return currentUser ? <>{children}</> : <Navigate to="/login" />;
+    return session ? <>{children}</> : <Navigate to="/login" />;
   };
 
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      {/* Use the Auth component for both login and register routes */}
+      <Route path="/login" element={<Auth />} />
+      <Route path="/register" element={<Auth />} />
       <Route
         path="/"
         element={
@@ -67,7 +69,7 @@ function AppContent() {
           </PrivateRoute>
         }
       />
-       <Route
+      <Route
         path="/sites/edit/:id"
         element={
           <PrivateRoute>
