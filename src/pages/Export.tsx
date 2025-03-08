@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Download, FileJson, FileSpreadsheet, FileText } from "lucide-react";
-import { exportAsJson, exportAsCsv, exportAsMarkdown } from "@/utils/exportUtils";
+import { Download, FileJson, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
+import { exportAsJson, exportAsCsv, exportAsMarkdown, fetchAllData } from "@/utils/exportUtils";
+import { useQuery } from "@tanstack/react-query";
 
 const Export = () => {
   const [isExporting, setIsExporting] = useState({
@@ -14,7 +15,19 @@ const Export = () => {
     markdown: false
   });
 
+  // Fetch all data using React Query
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['exportData'],
+    queryFn: fetchAllData,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
   const handleExport = async (format: "json" | "csv" | "markdown") => {
+    if (!data) {
+      toast.error("Aucune donnée disponible pour l'export");
+      return;
+    }
+
     setIsExporting(prev => ({ ...prev, [format]: true }));
     
     try {
@@ -23,23 +36,138 @@ const Export = () => {
       
       if (format === "json") {
         filename = `network-data-${timestamp}`;
-        await exportAsJson([], filename);
+        await exportAsJson(data.allData, filename);
       } else if (format === "csv") {
+        // Pour CSV, on aplatit les données
+        const flatData = [
+          ...data.sites.map(site => ({ type: 'site', ...site })),
+          ...data.equipment.map(eq => ({ type: 'equipment', ...eq })),
+          ...data.connections.map(conn => ({ type: 'connection', ...conn })),
+          ...data.ipRanges.map(range => ({ type: 'ipRange', ...range })),
+        ];
         filename = `network-data-${timestamp}`;
-        await exportAsCsv([], filename);
+        await exportAsCsv(flatData, filename);
       } else if (format === "markdown") {
         filename = `network-data-${timestamp}`;
-        await exportAsMarkdown([], 'Network Data Export', filename);
+        // Pour Markdown, on crée un document structuré avec plusieurs sections
+        let mdContent = `# Exportation des données réseau\n\n`;
+        mdContent += `Date: ${new Date().toLocaleString()}\n\n`;
+        
+        // Sites
+        mdContent += `## Sites (${data.sites.length})\n\n`;
+        if (data.sites.length > 0) {
+          const headers = Object.keys(data.sites[0]);
+          mdContent += `| ${headers.join(' | ')} |\n`;
+          mdContent += `| ${headers.map(() => '---').join(' | ')} |\n`;
+          data.sites.forEach(site => {
+            const values = headers.map(header => {
+              const value = site[header as keyof typeof site];
+              return value !== null && value !== undefined ? String(value) : '';
+            });
+            mdContent += `| ${values.join(' | ')} |\n`;
+          });
+        } else {
+          mdContent += 'Aucun site disponible.\n\n';
+        }
+        
+        // Equipment
+        mdContent += `\n## Équipements (${data.equipment.length})\n\n`;
+        if (data.equipment.length > 0) {
+          const headers = Object.keys(data.equipment[0]);
+          mdContent += `| ${headers.join(' | ')} |\n`;
+          mdContent += `| ${headers.map(() => '---').join(' | ')} |\n`;
+          data.equipment.forEach(eq => {
+            const values = headers.map(header => {
+              const value = eq[header as keyof typeof eq];
+              return value !== null && value !== undefined ? String(value) : '';
+            });
+            mdContent += `| ${values.join(' | ')} |\n`;
+          });
+        } else {
+          mdContent += 'Aucun équipement disponible.\n\n';
+        }
+        
+        // Connections
+        mdContent += `\n## Connexions réseau (${data.connections.length})\n\n`;
+        if (data.connections.length > 0) {
+          const headers = Object.keys(data.connections[0]);
+          mdContent += `| ${headers.join(' | ')} |\n`;
+          mdContent += `| ${headers.map(() => '---').join(' | ')} |\n`;
+          data.connections.forEach(conn => {
+            const values = headers.map(header => {
+              const value = conn[header as keyof typeof conn];
+              return value !== null && value !== undefined ? String(value) : '';
+            });
+            mdContent += `| ${values.join(' | ')} |\n`;
+          });
+        } else {
+          mdContent += 'Aucune connexion disponible.\n\n';
+        }
+        
+        // IP Ranges
+        mdContent += `\n## Plages IP (${data.ipRanges.length})\n\n`;
+        if (data.ipRanges.length > 0) {
+          const headers = Object.keys(data.ipRanges[0]);
+          mdContent += `| ${headers.join(' | ')} |\n`;
+          mdContent += `| ${headers.map(() => '---').join(' | ')} |\n`;
+          data.ipRanges.forEach(range => {
+            const values = headers.map(header => {
+              const value = range[header as keyof typeof range];
+              return value !== null && value !== undefined ? String(value) : '';
+            });
+            mdContent += `| ${values.join(' | ')} |\n`;
+          });
+        } else {
+          mdContent += 'Aucune plage IP disponible.\n\n';
+        }
+        
+        // Télécharger le document Markdown
+        const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8' });
+        saveAs(blob, `${filename}.md`);
       }
       
-      toast.success(`Successfully exported data to ${format.toUpperCase()}`);
+      toast.success(`Exportation réussie au format ${format.toUpperCase()}`);
     } catch (error) {
-      console.error(`Export to ${format} error:`, error);
-      toast.error(`Failed to export to ${format.toUpperCase()}`);
+      console.error(`Erreur d'exportation au format ${format}:`, error);
+      toast.error(`Échec de l'exportation au format ${format.toUpperCase()}`);
     } finally {
       setIsExporting(prev => ({ ...prev, [format]: false }));
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-6">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">Export Data</h1>
+          <p className="text-muted-foreground mt-1">
+            Export your network data in different formats
+          </p>
+        </div>
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <span className="ml-2">Chargement des données...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto py-6">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">Export Data</h1>
+          <p className="text-muted-foreground mt-1">
+            Export your network data in different formats
+          </p>
+        </div>
+        <div className="bg-destructive/10 text-destructive p-4 rounded-md">
+          <h3 className="font-semibold">Erreur lors du chargement des données</h3>
+          <p>Impossible de récupérer les données pour l'exportation. Veuillez réessayer plus tard.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6">
@@ -48,6 +176,16 @@ const Export = () => {
         <p className="text-muted-foreground mt-1">
           Export your network data in different formats
         </p>
+      </div>
+
+      <div className="mb-6 bg-accent/30 p-4 rounded-md">
+        <h2 className="font-medium mb-2">Données disponibles pour l'exportation</h2>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>Sites: {data?.sites.length || 0}</li>
+          <li>Équipements: {data?.equipment.length || 0}</li>
+          <li>Connexions réseau: {data?.connections.length || 0}</li>
+          <li>Plages IP: {data?.ipRanges.length || 0}</li>
+        </ul>
       </div>
 
       <Tabs defaultValue="json" className="max-w-3xl">
@@ -78,7 +216,7 @@ const Export = () => {
                 </div>
                 <Button 
                   onClick={() => handleExport("json")}
-                  disabled={isExporting.json}
+                  disabled={isExporting.json || !data}
                 >
                   {isExporting.json ? "Exporting..." : (
                     <>
@@ -113,7 +251,7 @@ const Export = () => {
                 </div>
                 <Button 
                   onClick={() => handleExport("csv")}
-                  disabled={isExporting.csv}
+                  disabled={isExporting.csv || !data}
                 >
                   {isExporting.csv ? "Exporting..." : (
                     <>
@@ -148,7 +286,7 @@ const Export = () => {
                 </div>
                 <Button 
                   onClick={() => handleExport("markdown")}
-                  disabled={isExporting.markdown}
+                  disabled={isExporting.markdown || !data}
                 >
                   {isExporting.markdown ? "Exporting..." : (
                     <>
