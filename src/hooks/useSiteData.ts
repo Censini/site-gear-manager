@@ -6,9 +6,11 @@ import { useGetSiteConnections } from "./useGetSiteConnections";
 import { useGetSiteIPRanges } from "./useGetSiteIPRanges";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const useSiteData = (id: string | undefined) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  const queryClient = useQueryClient();
   
   // Fetch site data
   const { 
@@ -52,6 +54,10 @@ export const useSiteData = (id: string | undefined) => {
         .eq("id", id);
       
       if (error) throw error;
+      
+      // Invalidate queries to refresh data across the app
+      queryClient.invalidateQueries({ queryKey: ["sites"] });
+      queryClient.invalidateQueries({ queryKey: ["site", id] });
       
       toast.success("Site deleted successfully");
       return true;

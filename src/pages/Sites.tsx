@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import SiteCard from "@/components/cards/SiteCard";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ const Sites = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Fetch sites from Supabase
   const { data, isLoading, error } = useQuery({
