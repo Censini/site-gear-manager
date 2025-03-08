@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -9,10 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ArrowLeft, Save } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const AddSite = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { session } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -34,6 +35,11 @@ const AddSite = () => {
     setIsSubmitting(true);
 
     try {
+      // Check if user is authenticated
+      if (!session?.user?.id) {
+        throw new Error("You must be logged in to create a site");
+      }
+
       // Map frontend form fields to database columns
       const siteData = {
         name: formData.name,
@@ -43,6 +49,7 @@ const AddSite = () => {
         contact_name: formData.contactName,
         contact_email: formData.contactEmail,
         contact_phone: formData.contactPhone,
+        user_id: session.user.id, // Add user_id to the siteData
       };
 
       const { data, error } = await supabase
