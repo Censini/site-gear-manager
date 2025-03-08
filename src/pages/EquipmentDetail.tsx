@@ -154,21 +154,25 @@ const EquipmentDetail = () => {
           <h1 className="text-3xl font-bold tracking-tight">{equipment.name}</h1>
           <StatusBadge status={equipment.status} className="ml-2" />
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" className="flex items-center gap-1" onClick={handleEdit}>
+        <div className="flex gap-2 w-full md:w-auto">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-1 flex-1 md:flex-none" 
+            onClick={handleEdit}
+          >
             <Edit className="h-4 w-4" />
             <span>Edit</span>
           </Button>
           <Button 
             variant="destructive" 
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 flex-1 md:flex-none"
             onClick={() => setShowDeleteDialog(true)}
             disabled={isDeleting}
           >
             {isDeleting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Suppression...</span>
+                <span>Deleting...</span>
               </>
             ) : (
               <>
@@ -252,21 +256,21 @@ const EquipmentDetail = () => {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action ne peut pas être annulée. Cela supprimera définitivement l'équipement <strong>{equipment.name}</strong> de la base de données.
+              This action cannot be undone. This will permanently delete the equipment <strong>{equipment.name}</strong> from the database.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
               {isDeleting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Suppression...
+                  Deleting...
                 </>
               ) : (
-                "Supprimer"
+                "Delete"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Equipment, EquipmentType, Status } from "@/types/types";
@@ -23,7 +22,6 @@ const EquipmentTable = ({ equipmentList, onAddEquipment }: EquipmentTableProps) 
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
   const [typeFilter, setTypeFilter] = useState<EquipmentType | "all">("all");
 
-  // Get sites data for displaying site names
   const { data: sites } = useQuery({
     queryKey: ["sites"],
     queryFn: async () => {
@@ -60,17 +58,15 @@ const EquipmentTable = ({ equipmentList, onAddEquipment }: EquipmentTableProps) 
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-2 flex-1">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search equipment..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search equipment..."
+            className="pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <Select
