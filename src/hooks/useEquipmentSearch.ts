@@ -2,6 +2,25 @@
 import { useState, useMemo } from "react";
 import { Equipment, EquipmentType, Status } from "@/types/types";
 
+// Helper functions for filtering
+const matchesSearchTerm = (item: Equipment, searchTerm: string): boolean => {
+  const term = searchTerm.toLowerCase();
+  return (
+    item.name.toLowerCase().includes(term) ||
+    (item.ipAddress && item.ipAddress.toLowerCase().includes(term)) ||
+    item.manufacturer.toLowerCase().includes(term) ||
+    item.model.toLowerCase().includes(term)
+  );
+};
+
+const matchesStatusFilter = (item: Equipment, statusFilter: Status | "all"): boolean => {
+  return statusFilter === "all" || item.status === statusFilter;
+};
+
+const matchesTypeFilter = (item: Equipment, typeFilter: EquipmentType | "all"): boolean => {
+  return typeFilter === "all" || item.type === typeFilter;
+};
+
 export const useEquipmentSearch = (equipmentList: Equipment[]) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
@@ -10,18 +29,11 @@ export const useEquipmentSearch = (equipmentList: Equipment[]) => {
   const filteredEquipment = useMemo(() => {
     if (!equipmentList || !Array.isArray(equipmentList)) return [];
     
-    return equipmentList.filter((item) => {
-      const matchesSearch = 
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.ipAddress && item.ipAddress.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        item.manufacturer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.model.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = statusFilter === "all" || item.status === statusFilter;
-      const matchesType = typeFilter === "all" || item.type === typeFilter;
-      
-      return matchesSearch && matchesStatus && matchesType;
-    });
+    return equipmentList.filter((item) => 
+      matchesSearchTerm(item, searchTerm) && 
+      matchesStatusFilter(item, statusFilter) && 
+      matchesTypeFilter(item, typeFilter)
+    );
   }, [equipmentList, searchTerm, statusFilter, typeFilter]);
   
   return { 
