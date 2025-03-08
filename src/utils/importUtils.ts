@@ -161,7 +161,7 @@ export const saveImportedData = async (data: any) => {
       );
       
       for (const site of sites) {
-        const originalId = site.id || 'site-' + Date.now();
+        const originalId = site.id || site.name?.replace(/\s+/g, '-').toLowerCase() || 'site-' + Date.now();
         const newSiteId = await saveSite(site, results);
         if (newSiteId) {
           siteIdMapping[originalId] = newSiteId;
@@ -179,7 +179,7 @@ export const saveImportedData = async (data: any) => {
       if (data.sites && Array.isArray(data.sites)) {
         // D'abord traiter les sites pour construire le mapping
         for (const site of data.sites) {
-          const originalId = site.id || site.name.replace(/\s+/g, '-').toLowerCase();
+          const originalId = site.id || site.name?.replace(/\s+/g, '-').toLowerCase() || 'site-' + Date.now();
           const newSiteId = await saveSite(site, results);
           if (newSiteId) {
             siteIdMapping[originalId] = newSiteId;
@@ -194,12 +194,14 @@ export const saveImportedData = async (data: any) => {
         }
       }
       
+      // Traiter les connexions réseau
       if (data.connections && Array.isArray(data.connections)) {
         for (const conn of data.connections) {
           await saveConnection(conn, results, siteIdMapping);
         }
       }
       
+      // Traiter les plages IP
       if (data.ipRanges && Array.isArray(data.ipRanges)) {
         for (const range of data.ipRanges) {
           await saveIPRange(range, results, siteIdMapping);
@@ -218,13 +220,16 @@ export const saveImportedData = async (data: any) => {
 const saveItemByType = async (item: any, results: any, siteIdMapping: Record<string, string>) => {
   // Try to infer the item type from its properties
   if (item.type === 'router' || item.type === 'switch' || item.type === 'server' || 
-             item.type === 'wifi' || item.type === 'hub' || item.type === 'printer' || 
-             item.type === 'other' || item.macAddress) {
+      item.type === 'wifi' || item.type === 'hub' || item.type === 'printer' || 
+      item.type === 'other' || item.macAddress || item.mac_address) {
     await saveEquipment(item, results, siteIdMapping);
-  } else if (item.provider && (item.type === 'fiber' || item.type === 'adsl' || 
-             item.type === 'sdsl' || item.type === 'satellite' || item.type === 'other')) {
+  } else if ((item.provider || item.provider_name) && (item.type === 'fiber' || item.type === 'adsl' || 
+      item.type === 'sdsl' || item.type === 'satellite' || item.type === 'other' || 
+      item.bandwidth || item.sla)) {
     await saveConnection(item, results, siteIdMapping);
-  } else if (item.range && (item.dhcpScope !== undefined || item.isReserved !== undefined)) {
+  } else if ((item.range || item.ip_range) && (item.dhcpScope !== undefined || 
+      item.is_dhcp_scope !== undefined || item.dhcp_scope !== undefined || 
+      item.isReserved !== undefined || item.is_reserved !== undefined)) {
     await saveIPRange(item, results, siteIdMapping);
   } else {
     console.warn('Could not determine type for item:', item);
@@ -386,12 +391,14 @@ const saveConnection = async (connection: any, results: any, siteIdMapping: Reco
       id: validId,
       site_id: siteId,
       type: connection.type || "other",
-      provider: connection.provider || "",
-      contract_ref: connection.contractRef || connection.contract_ref || "",
-      bandwidth: connection.bandwidth || "",
-      sla: connection.sla || "",
+      provider: connection.provider || connection.provider_name || "",
+      contract_ref: connection.contractRef || connection.contract_ref || connection.reference || "",
+      bandwidth: connection.bandwidth || connection.speed || "",
+      sla: connection.sla || connection.serviceLevelAgreement || "",
       status: connection.status || "active"
     };
+    
+    console.log("Saving connection with data:", connectionData);
     
     const { error } = await supabase
       .from('network_connections')
@@ -437,11 +444,13 @@ const saveIPRange = async (ipRange: any, results: any, siteIdMapping: Record<str
     const ipRangeData = {
       id: validId,
       site_id: siteId,
-      range: ipRange.range || "",
-      description: ipRange.description || "",
+      range: ipRange.range || ipRange.ip_range || ipRange.cidr || "",
+      description: ipRange.description || ipRange.desc || ipRange.notes || "",
       is_reserved: ipRange.isReserved || ipRange.is_reserved || false,
-      dhcp_scope: ipRange.dhcpScope || ipRange.dhcp_scope || false
+      dhcp_scope: ipRange.dhcpScope || ipRange.dhcp_scope || ipRange.is_dhcp_scope || false
     };
+    
+    console.log("Saving IP range with data:", ipRangeData);
     
     const { error } = await supabase
       .from('ip_ranges')
