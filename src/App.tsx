@@ -22,6 +22,7 @@ import AddIPRange from "./pages/AddIPRange";
 import EditIPRange from "./pages/EditIPRange";
 import Import from "./pages/Import";
 import Export from "./pages/Export";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -123,6 +124,11 @@ function App() {
                 <Route path="/export" element={
                   <MainLayout>
                     <Export />
+                  </MainLayout>
+                } />
+                <Route path="/settings" element={
+                  <MainLayout>
+                    <Settings />
                   </MainLayout>
                 } />
               </Route>
