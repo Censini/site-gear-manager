@@ -1,8 +1,8 @@
-
 import Papa from 'papaparse';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
 
 // Generic import types
 export type ImportFormat = 'json' | 'csv';
@@ -146,6 +146,8 @@ export const saveImportedData = async (data: any) => {
     ipRanges: { success: 0, error: 0 },
   };
   
+  console.log("Data to save:", data);
+  
   try {
     // Handle different data formats
     if (Array.isArray(data)) {
@@ -206,20 +208,39 @@ const saveItemByType = async (item: any, results: any) => {
   }
 };
 
+// Fonction pour générer un UUID valide ou utiliser celui fourni s'il est valide
+const getValidUUID = (id: string | undefined): string => {
+  if (!id) return uuidv4();
+  
+  // Vérifier si l'ID est déjà un UUID valide
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(id)) {
+    return id;
+  }
+  
+  // Générer un nouvel UUID
+  return uuidv4();
+};
+
 // Helper functions to save each type of data
 const saveSite = async (site: any, results: any) => {
   try {
-    // Convert camelCase to snake_case for database compatibility
+    // Générer un UUID valide
+    const validId = getValidUUID(site.id);
+    
+    // Mapper les champs du fichier JSON aux champs de la base de données
     const siteData = {
-      id: site.id,
+      id: validId,
       name: site.name,
       location: site.location,
       country: site.country,
-      address: site.address,
-      contact_name: site.contactName,
-      contact_email: site.contactEmail,
-      contact_phone: site.contactPhone
+      address: site.address || "",
+      contact_name: site.contact_name || site.contactName || "",
+      contact_email: site.contact_email || site.contactEmail || site.contact_mail || site.contactMail || "",
+      contact_phone: site.contact_phone || site.contactPhone || ""
     };
+    
+    console.log("Saving site with data:", siteData);
     
     const { error } = await supabase
       .from('sites')
@@ -235,20 +256,24 @@ const saveSite = async (site: any, results: any) => {
 
 const saveEquipment = async (equipment: any, results: any) => {
   try {
+    // Générer un UUID valide
+    const validId = getValidUUID(equipment.id);
+    const validSiteId = getValidUUID(equipment.siteId || equipment.site_id);
+    
     // Convert camelCase to snake_case for database compatibility
     const equipmentData = {
-      id: equipment.id,
+      id: validId,
       name: equipment.name,
-      site_id: equipment.siteId,
+      site_id: validSiteId,
       type: equipment.type,
-      model: equipment.model,
-      manufacturer: equipment.manufacturer,
-      ip_address: equipment.ipAddress,
-      mac_address: equipment.macAddress,
-      firmware: equipment.firmware,
-      install_date: equipment.installDate,
-      status: equipment.status,
-      netbios: equipment.netbios
+      model: equipment.model || "",
+      manufacturer: equipment.manufacturer || "",
+      ip_address: equipment.ipAddress || equipment.ip_address || "",
+      mac_address: equipment.macAddress || equipment.mac_address || "",
+      firmware: equipment.firmware || "",
+      install_date: equipment.installDate || equipment.install_date || "",
+      status: equipment.status || "active",
+      netbios: equipment.netbios || ""
     };
     
     const { error } = await supabase
@@ -265,16 +290,20 @@ const saveEquipment = async (equipment: any, results: any) => {
 
 const saveConnection = async (connection: any, results: any) => {
   try {
+    // Générer un UUID valide
+    const validId = getValidUUID(connection.id);
+    const validSiteId = getValidUUID(connection.siteId || connection.site_id);
+    
     // Convert camelCase to snake_case for database compatibility
     const connectionData = {
-      id: connection.id,
-      site_id: connection.siteId,
-      type: connection.type,
-      provider: connection.provider,
-      contract_ref: connection.contractRef,
-      bandwidth: connection.bandwidth,
-      sla: connection.sla,
-      status: connection.status
+      id: validId,
+      site_id: validSiteId,
+      type: connection.type || "other",
+      provider: connection.provider || "",
+      contract_ref: connection.contractRef || connection.contract_ref || "",
+      bandwidth: connection.bandwidth || "",
+      sla: connection.sla || "",
+      status: connection.status || "active"
     };
     
     const { error } = await supabase
@@ -291,14 +320,18 @@ const saveConnection = async (connection: any, results: any) => {
 
 const saveIPRange = async (ipRange: any, results: any) => {
   try {
+    // Générer un UUID valide
+    const validId = getValidUUID(ipRange.id);
+    const validSiteId = getValidUUID(ipRange.siteId || ipRange.site_id);
+    
     // Convert camelCase to snake_case for database compatibility
     const ipRangeData = {
-      id: ipRange.id,
-      site_id: ipRange.siteId,
-      range: ipRange.range,
-      description: ipRange.description,
-      is_reserved: ipRange.isReserved,
-      dhcp_scope: ipRange.dhcpScope
+      id: validId,
+      site_id: validSiteId,
+      range: ipRange.range || "",
+      description: ipRange.description || "",
+      is_reserved: ipRange.isReserved || ipRange.is_reserved || false,
+      dhcp_scope: ipRange.dhcpScope || ipRange.dhcp_scope || false
     };
     
     const { error } = await supabase

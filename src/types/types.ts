@@ -1,4 +1,3 @@
-
 export type Status = "active" | "maintenance" | "failure" | "unknown";
 
 export interface Site {
@@ -10,6 +9,7 @@ export interface Site {
   contactName: string;
   contactEmail: string;
   contactPhone: string;
+  contactMail?: string; // Pour compatibilité avec les anciennes données
 }
 
 export interface NetworkConnection {
