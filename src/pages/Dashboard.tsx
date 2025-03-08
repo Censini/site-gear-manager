@@ -1,223 +1,195 @@
 
-import { Server, Building, Network, AlertTriangle, Globe, Wifi } from "lucide-react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2, Building, Server, Wifi, AlertTriangle } from "lucide-react";
 import StatsCard from "@/components/cards/StatsCard";
 import StatusChart from "@/components/dashboard/StatusChart";
 import TypeChart from "@/components/dashboard/TypeChart";
+import SiteContactsCard from "@/components/sites/SiteContactsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import StatusBadge from "@/components/ui/StatusBadge";
-import { supabase } from "@/integrations/supabase/client";
-import { Status, Equipment, Site, DashboardStats } from "@/types/types";
-import { Skeleton } from "@/components/ui/skeleton";
 
 const Dashboard = () => {
-  const [equipment, setEquipment] = useState<any[]>([]);
-  const [sites, setSites] = useState<any[]>([]);
-  const [connections, setConnections] = useState<any[]>([]);
-  const [providers, setProviders] = useState<{name: string, count: number}[]>([]);
-  const [stats, setStats] = useState<DashboardStats>({
-    totalSites: 0,
-    totalEquipment: 0,
-    equipmentByStatus: {
-      active: 0,
-      maintenance: 0,
-      failure: 0,
-      unknown: 0
-    },
-    equipmentByType: {
-      router: 0,
-      switch: 0,
-      hub: 0,
-      wifi: 0,
-      server: 0,
-      printer: 0,
-      other: 0
-    },
-    sitesWithIssues: 0
-  });
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch equipment
-        const { data: equipmentData, error: equipmentError } = await supabase
-          .from('equipment')
-          .select('*');
-        
-        if (equipmentError) throw equipmentError;
-        
-        // Fetch sites
-        const { data: sitesData, error: sitesError } = await supabase
-          .from('sites')
-          .select('*');
-        
-        if (sitesError) throw sitesError;
-        
-        // Fetch connections
-        const { data: connectionsData, error: connectionsError } = await supabase
-          .from('network_connections')
-          .select('*');
-          
-        if (connectionsError) throw connectionsError;
-        
-        setEquipment(equipmentData || []);
-        setSites(sitesData || []);
-        setConnections(connectionsData || []);
-        
-        // Calculate providers statistics
-        const providerCounts = connectionsData?.reduce((acc: Record<string, number>, conn: any) => {
-          const provider = conn.provider || 'Inconnu';
-          acc[provider] = (acc[provider] || 0) + 1;
-          return acc;
-        }, {});
-        
-        const providersArray = Object.entries(providerCounts || {})
-          .map(([name, count]) => ({ name, count: count as number }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 5);
-          
-        setProviders(providersArray);
-        
-        // Calculate statistics
-        const totalEquipment = equipmentData?.length || 0;
-        const totalSites = sitesData?.length || 0;
-        
-        const equipmentByStatus: Record<Status, number> = {
-          active: 0,
-          maintenance: 0,
-          failure: 0,
-          unknown: 0
-        };
-        
-        const equipmentByType: Record<string, number> = {
-          router: 0,
-          switch: 0,
-          hub: 0,
-          wifi: 0,
-          server: 0,
-          printer: 0,
-          other: 0
-        };
-        
-        equipmentData?.forEach((item: any) => {
-          // Count by status
-          if (item.status in equipmentByStatus) {
-            equipmentByStatus[item.status as Status]++;
-          } else {
-            equipmentByStatus.unknown++;
-          }
-          
-          // Count by type
-          if (item.type in equipmentByType) {
-            equipmentByType[item.type]++;
-          } else {
-            equipmentByType.other++;
-          }
-        });
-        
-        // Calculate sites with issues
-        const sitesWithIssuesCount = new Set(
-          equipmentData
-            ?.filter((item: any) => item.status === 'maintenance' || item.status === 'failure')
-            .map((item: any) => item.site_id)
-            .filter(Boolean)
-        ).size;
-        
-        setStats({
-          totalEquipment,
-          totalSites,
-          equipmentByStatus,
-          equipmentByType,
-          sitesWithIssues: sitesWithIssuesCount
-        });
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
+  const { data: stats, isLoading: isLoadingStats } = useQuery({
+    queryKey: ["dashboard-stats"],
+    queryFn: async () => {
+      // Récupérer le nombre de sites
+      const { count: sitesCount, error: sitesError } = await supabase
+        .from("sites")
+        .select("*", { count: "exact", head: true });
+
+      // Récupérer le nombre total d'équipements
+      const { count: equipmentCount, error: equipmentError } = await supabase
+        .from("equipment")
+        .select("*", { count: "exact", head: true });
+
+      // Récupérer le nombre d'équipements avec problèmes
+      const { count: equipmentWithIssuesCount, error: issuesError } = await supabase
+        .from("equipment")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "Problème");
+
+      // Récupérer le nombre de connexions internet
+      const { count: connectionsCount, error: connectionsError } = await supabase
+        .from("network_connections")
+        .select("*", { count: "exact", head: true });
+
+      if (sitesError || equipmentError || issuesError || connectionsError) {
+        throw new Error("Erreur lors de la récupération des statistiques");
       }
-    };
-    
-    fetchData();
-  }, []);
-  
-  // Get equipment with issues (maintenance or failure)
-  const equipmentWithIssues = equipment
-    .filter((item) => item.status === "maintenance" || item.status === "failure")
-    .slice(0, 5);
-  
-  if (loading) {
-    return <DashboardSkeleton />;
+
+      return {
+        sitesCount: sitesCount || 0,
+        equipmentCount: equipmentCount || 0,
+        equipmentWithIssuesCount: equipmentWithIssuesCount || 0,
+        connectionsCount: connectionsCount || 0,
+      };
+    },
+  });
+
+  // Query pour récupérer les équipements avec problèmes
+  const { data: equipmentWithIssues, isLoading: isLoadingIssues } = useQuery({
+    queryKey: ["equipment-with-issues"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("equipment")
+        .select("id, name, type, manufacturer, model, site_id, sites(name)")
+        .eq("status", "Problème")
+        .limit(5);
+
+      if (error) throw error;
+
+      return data.map((item) => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        manufacturer: item.manufacturer,
+        model: item.model,
+        siteName: item.sites?.name || "N/A",
+      }));
+    },
+  });
+
+  // Query pour récupérer les providers internet les plus utilisés
+  const { data: providers, isLoading: isLoadingProviders } = useQuery({
+    queryKey: ["providers-stats"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("network_connections")
+        .select("provider, count")
+        .select();
+
+      if (error) throw error;
+
+      // Regrouper par provider et compter
+      const providerCounts: Record<string, number> = {};
+      data.forEach(item => {
+        providerCounts[item.provider] = (providerCounts[item.provider] || 0) + 1;
+      });
+
+      // Convertir en tableau et trier
+      return Object.entries(providerCounts)
+        .map(([provider, count]) => ({ provider, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+    },
+  });
+
+  const isLoading = isLoadingStats || isLoadingIssues || isLoadingProviders;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
-  
+
   return (
     <div className="space-y-6">
-      <h1 className="dashboard-title">Tableau de bord</h1>
-      
-      <div className="dashboard-stats">
+      <h1 className="text-3xl font-bold">Tableau de bord</h1>
+
+      {/* Statistiques */}
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard
-          title="Total Équipements"
-          value={stats.totalEquipment}
-          icon={<Server className="h-6 w-6 text-primary" />}
+          title="Sites"
+          value={stats?.sitesCount || 0}
+          icon={<Building className="h-6 w-6" />}
         />
         <StatsCard
-          title="Total Sites"
-          value={stats.totalSites}
-          icon={<Building className="h-6 w-6 text-primary" />}
+          title="Équipements"
+          value={stats?.equipmentCount || 0}
+          icon={<Server className="h-6 w-6" />}
         />
         <StatsCard
-          title="Équipements Actifs"
-          value={stats.equipmentByStatus.active}
-          icon={<Network className="h-6 w-6 text-primary" />}
+          title="Liens Internet"
+          value={stats?.connectionsCount || 0}
+          icon={<Wifi className="h-6 w-6" />}
         />
         <StatsCard
-          title="Sites avec Problèmes"
-          value={stats.sitesWithIssues}
-          icon={<AlertTriangle className="h-6 w-6 text-primary" />}
+          title="Équipements avec problèmes"
+          value={stats?.equipmentWithIssuesCount || 0}
+          icon={<AlertTriangle className="h-6 w-6" />}
+          className="bg-destructive/10 dark:bg-destructive/20"
         />
       </div>
 
-      <div className="dashboard-charts">
-        <StatusChart stats={stats} />
-        <TypeChart stats={stats} />
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="dashboard-table">
+      {/* Graphiques et tableaux */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Graphique des statuts */}
+        <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>Équipements avec Problèmes</CardTitle>
+            <CardTitle>Statut des équipements</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <StatusChart />
+          </CardContent>
+        </Card>
+
+        {/* Graphique des types */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>Types d'équipements</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TypeChart />
+          </CardContent>
+        </Card>
+        
+        {/* Carte des contacts de sites (nouvelle) */}
+        <SiteContactsCard />
+      </div>
+
+      {/* Tableaux d'informations */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Équipements avec problèmes */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Équipements avec problèmes</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nom</TableHead>
-                  <TableHead>Adresse IP</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead>Site</TableHead>
-                  <TableHead>Statut</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {equipmentWithIssues.length > 0 ? (
+                {equipmentWithIssues?.length ? (
                   equipmentWithIssues.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell>{item.ip_address}</TableCell>
-                      <TableCell>
-                        {sites.find((site) => site.id === item.site_id)?.name || "Non assigné"}
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={item.status} />
-                      </TableCell>
+                      <TableCell>{item.type}</TableCell>
+                      <TableCell>{item.siteName}</TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
-                      Aucun équipement avec problèmes trouvé.
+                    <TableCell colSpan={3} className="text-center">
+                      Aucun équipement avec problèmes
                     </TableCell>
                   </TableRow>
                 )}
@@ -225,35 +197,32 @@ const Dashboard = () => {
             </Table>
           </CardContent>
         </Card>
-        
-        <Card className="dashboard-table">
+
+        {/* Fournisseurs Internet */}
+        <Card>
           <CardHeader>
-            <CardTitle>Fournisseurs de Liens Internet</CardTitle>
+            <CardTitle>Fournisseurs Internet</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Fournisseur</TableHead>
-                  <TableHead>Nombre de connexions</TableHead>
-                  <TableHead>Pourcentage</TableHead>
+                  <TableHead>Nombre de liens</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {providers.length > 0 ? (
-                  providers.map((provider, index) => (
+                {providers?.length ? (
+                  providers.map((item, index) => (
                     <TableRow key={index}>
-                      <TableCell className="font-medium">{provider.name}</TableCell>
-                      <TableCell>{provider.count}</TableCell>
-                      <TableCell>
-                        {Math.round((provider.count / connections.length) * 100)}%
-                      </TableCell>
+                      <TableCell className="font-medium">{item.provider}</TableCell>
+                      <TableCell>{item.count}</TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={3} className="h-24 text-center">
-                      Aucun fournisseur de liens internet trouvé.
+                    <TableCell colSpan={2} className="text-center">
+                      Aucun fournisseur internet
                     </TableCell>
                   </TableRow>
                 )}
@@ -265,28 +234,5 @@ const Dashboard = () => {
     </div>
   );
 };
-
-// Loading skeleton for the dashboard
-const DashboardSkeleton = () => (
-  <div className="space-y-6">
-    <Skeleton className="h-10 w-40" />
-    
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-      {Array(4).fill(0).map((_, i) => (
-        <Skeleton key={i} className="h-32" />
-      ))}
-    </div>
-
-    <div className="grid gap-6 md:grid-cols-2">
-      <Skeleton className="h-80" />
-      <Skeleton className="h-80" />
-    </div>
-
-    <div className="grid gap-6 md:grid-cols-2">
-      <Skeleton className="h-96" />
-      <Skeleton className="h-96" />
-    </div>
-  </div>
-);
 
 export default Dashboard;
