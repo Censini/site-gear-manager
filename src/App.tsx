@@ -12,8 +12,8 @@ import AddSite from "./pages/AddSite";
 import SiteDetail from "./pages/SiteDetail";
 import EquipmentDetail from "./pages/EquipmentDetail";
 import EditSite from "./pages/EditSite";
-// Import the Auth component instead of Login and Register
 import Auth from "./pages/Auth";
+import MainLayout from "./components/layout/MainLayout";
 
 function App() {
   return (
@@ -26,15 +26,18 @@ function App() {
 }
 
 function AppContent() {
-  const { session } = useAuth(); // Changed from currentUser to session
+  const { session } = useAuth();
 
   const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-    return session ? <>{children}</> : <Navigate to="/login" />;
+    return session ? (
+      <MainLayout>{children}</MainLayout>
+    ) : (
+      <Navigate to="/login" />
+    );
   };
 
   return (
     <Routes>
-      {/* Use the Auth component for both login and register routes */}
       <Route path="/login" element={<Auth />} />
       <Route path="/register" element={<Auth />} />
       <Route
