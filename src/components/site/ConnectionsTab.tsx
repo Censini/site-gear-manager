@@ -20,7 +20,7 @@ const ConnectionsTab = ({ connections, onRefresh }: ConnectionsTabProps) => {
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   const handleNavigateToConnection = (id: string) => {
-    navigate(`/connections/${id}`);
+    navigate(`/connections/edit/${id}`);
   };
 
   const handleRemoveFromSite = async (connectionId: string, e: React.MouseEvent) => {
