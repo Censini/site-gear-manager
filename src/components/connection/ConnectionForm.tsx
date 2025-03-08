@@ -1,218 +1,256 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAddConnection } from "@/hooks/useAddConnection";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { NetworkConnection } from "@/types/types";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
 
-interface ConnectionFormProps {
-  connection?: NetworkConnection;
-  onSubmit?: () => void;
-}
+const connectionSchema = z.object({
+  siteId: z.string({
+    required_error: "Please select a site",
+  }),
+  type: z.enum(["fiber", "adsl", "sdsl", "satellite", "other"], {
+    required_error: "Please select a connection type",
+  }),
+  provider: z.string().min(1, { message: "Provider is required" }),
+  contractRef: z.string().optional(),
+  bandwidth: z.string().optional(),
+  sla: z.string().optional(),
+  status: z.enum(["active", "maintenance", "failure", "unknown"], {
+    required_error: "Please select a status",
+  }),
+});
 
-export default function ConnectionForm({ connection, onSubmit }: ConnectionFormProps) {
+type ConnectionFormValues = z.infer<typeof connectionSchema>;
+
+const ConnectionForm = () => {
   const navigate = useNavigate();
-  const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const { mutate: addConnection, isPending } = useAddConnection();
   
-  // Form state
-  const [siteId, setSiteId] = useState(connection?.siteId || "");
-  const [type, setType] = useState<string>(connection?.type || "fiber");
-  const [provider, setProvider] = useState(connection?.provider || "");
-  const [contractRef, setContractRef] = useState(connection?.contractRef || "");
-  const [bandwidth, setBandwidth] = useState(connection?.bandwidth || "");
-  const [sla, setSla] = useState(connection?.sla || "");
-  const [status, setStatus] = useState<string>(connection?.status || "active");
-  
-  useEffect(() => {
-    const fetchSites = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("sites")
-          .select("id, name");
-        
-        if (error) throw error;
-        setSites(data || []);
-      } catch (error) {
+  const form = useForm<ConnectionFormValues>({
+    resolver: zodResolver(connectionSchema),
+    defaultValues: {
+      type: "fiber",
+      provider: "",
+      contractRef: "",
+      bandwidth: "",
+      sla: "",
+      status: "active",
+    },
+  });
+
+  const { data: sites = [] } = useQuery({
+    queryKey: ["sites"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sites")
+        .select("id, name");
+      
+      if (error) {
         console.error("Error fetching sites:", error);
-        toast.error("Failed to load sites");
+        throw error;
       }
+      
+      return data || [];
+    },
+  });
+
+  const onSubmit = (data: ConnectionFormValues) => {
+    const connectionData: Omit<NetworkConnection, "id" | "siteName"> = {
+      siteId: data.siteId,
+      type: data.type,
+      provider: data.provider,
+      contractRef: data.contractRef || "",
+      bandwidth: data.bandwidth || "",
+      sla: data.sla || "",
+      status: data.status,
     };
-    
-    fetchSites();
-  }, []);
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    try {
-      const connectionData = {
-        site_id: siteId,
-        type,
-        provider,
-        contract_ref: contractRef,
-        bandwidth,
-        sla,
-        status
-      };
-      
-      let result;
-      
-      if (connection?.id) {
-        // Update existing connection
-        result = await supabase
-          .from("network_connections")
-          .update(connectionData)
-          .eq("id", connection.id);
-      } else {
-        // Create new connection
-        result = await supabase
-          .from("network_connections")
-          .insert(connectionData);
-      }
-      
-      if (result.error) throw result.error;
-      
-      toast.success(connection?.id ? "Connection updated successfully" : "Connection created successfully");
-      
-      if (onSubmit) {
-        onSubmit();
-      } else {
+
+    addConnection(connectionData, {
+      onSuccess: () => {
         navigate("/connections");
-      }
-    } catch (error) {
-      console.error("Error saving connection:", error);
-      toast.error("Failed to save connection");
-    } finally {
-      setIsLoading(false);
-    }
+      },
+    });
   };
-  
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="site">Site</Label>
-            <Select
-              value={siteId}
-              onValueChange={setSiteId}
-              required
-            >
-              <SelectTrigger id="site">
-                <SelectValue placeholder="Select a site" />
-              </SelectTrigger>
-              <SelectContent>
-                {sites.map((site) => (
-                  <SelectItem key={site.id} value={site.id}>
-                    {site.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="type">Connection Type</Label>
-            <Select
-              value={type}
-              onValueChange={setType}
-              required
-            >
-              <SelectTrigger id="type">
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="fiber">Fiber</SelectItem>
-                <SelectItem value="adsl">ADSL</SelectItem>
-                <SelectItem value="sdsl">SDSL</SelectItem>
-                <SelectItem value="satellite">Satellite</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="siteId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Site</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a site" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {sites.map((site) => (
+                    <SelectItem key={site.id} value={site.id}>
+                      {site.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Connection Type</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="fiber">Fiber</SelectItem>
+                  <SelectItem value="adsl">ADSL</SelectItem>
+                  <SelectItem value="sdsl">SDSL</SelectItem>
+                  <SelectItem value="satellite">Satellite</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="provider"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Provider</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter provider name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="contractRef"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Contract Reference</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter contract reference" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="bandwidth"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Bandwidth</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. 100Mbps" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="sla"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>SLA</FormLabel>
+              <FormControl>
+                <Input placeholder="Service Level Agreement" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a status" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="failure">Failure</SelectItem>
+                  <SelectItem value="unknown">Unknown</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end space-x-2">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => navigate("/connections")}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isPending}>
+            {isPending ? "Saving..." : "Save Connection"}
+          </Button>
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="provider">Provider</Label>
-          <Input 
-            id="provider" 
-            value={provider} 
-            onChange={(e) => setProvider(e.target.value)} 
-            required 
-          />
-        </div>
-        
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="contractRef">Contract Reference</Label>
-            <Input 
-              id="contractRef" 
-              value={contractRef} 
-              onChange={(e) => setContractRef(e.target.value)} 
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="bandwidth">Bandwidth</Label>
-            <Input 
-              id="bandwidth" 
-              value={bandwidth} 
-              onChange={(e) => setBandwidth(e.target.value)} 
-              placeholder="e.g. 1 Gbps" 
-            />
-          </div>
-        </div>
-        
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="sla">SLA</Label>
-            <Input 
-              id="sla" 
-              value={sla} 
-              onChange={(e) => setSla(e.target.value)} 
-              placeholder="e.g. 99.9%, 4h response" 
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select
-              value={status}
-              onValueChange={setStatus}
-              required
-            >
-              <SelectTrigger id="status">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="maintenance">Maintenance</SelectItem>
-                <SelectItem value="failure">Failure</SelectItem>
-                <SelectItem value="unknown">Unknown</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-      
-      <div className="flex justify-end gap-2">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={() => navigate("/connections")}
-        >
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Saving..." : connection?.id ? "Update Connection" : "Add Connection"}
-        </Button>
-      </div>
-    </form>
+      </form>
+    </Form>
   );
-}
+};
+
+export default ConnectionForm;

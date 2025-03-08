@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ConnectionForm from "@/components/connection/ConnectionForm";
 
-export default function AddConnection() {
+const AddConnection = () => {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">Add New Connection</h1>
@@ -17,4 +17,6 @@ export default function AddConnection() {
       </Card>
     </div>
   );
-}
+};
+
+export default AddConnection;

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +16,7 @@ import AddSite from "./pages/AddSite";
 import EditSite from "./pages/EditSite";
 import IPAM from "./pages/IPAM";
 import Connections from "./pages/Connections";
+import AddConnection from "./pages/AddConnection";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -79,18 +81,14 @@ function App() {
                   </MainLayout>
                 } />
                 <Route path="/connections" element={
-                  <ProtectedRoute>
-                    <MainLayout>
-                      <Connections />
-                    </MainLayout>
-                  </ProtectedRoute>
+                  <MainLayout>
+                    <Connections />
+                  </MainLayout>
                 } />
                 <Route path="/connections/add" element={
-                  <ProtectedRoute>
-                    <MainLayout>
-                      <AddConnection />
-                    </MainLayout>
-                  </ProtectedRoute>
+                  <MainLayout>
+                    <AddConnection />
+                  </MainLayout>
                 } />
                 <Route path="/ipam" element={
                   <MainLayout>
