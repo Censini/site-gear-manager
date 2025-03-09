@@ -39,7 +39,9 @@ export const useGetSite = (id: string | undefined) => {
           address: data.address || "",
           contactName: data.contact_name || "",
           contactEmail: data.contact_email || "",
-          contactPhone: data.contact_phone || ""
+          contactPhone: data.contact_phone || "",
+          floorplanUrl: data.floorplan_url || "",
+          rackPhotosUrls: data.rack_photos_urls || []
         } as Site;
       } catch (error) {
         console.error("Error in site query:", error);

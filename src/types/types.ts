@@ -28,6 +28,8 @@ export type Site = {
   contactName: string;
   contactEmail: string;
   contactPhone: string;
+  floorplanUrl?: string;
+  rackPhotosUrls?: string[];
 };
 
 export type NetworkConnectionType = 'internet' | 'mpls' | 'vpn' | 'fiber' | 'adsl' | 'sdsl' | 'satellite' | 'other';

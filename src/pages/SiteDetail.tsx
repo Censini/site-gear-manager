@@ -6,6 +6,7 @@ import { useSiteData } from "@/hooks/useSiteData";
 import SiteHeader from "@/components/site/SiteHeader";
 import SiteInfoCard from "@/components/site/SiteInfoCard";
 import SiteResourcesCard from "@/components/site/SiteResourcesCard";
+import SiteDocumentsCard from "@/components/site/SiteDocumentsCard";
 
 const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -71,6 +72,10 @@ const SiteDetail = () => {
           ipRanges={ipRanges} 
           onRefresh={refetch}
         />
+      </div>
+      
+      <div className="grid gap-6 md:grid-cols-3">
+        <SiteDocumentsCard site={site} />
       </div>
     </div>
   );
