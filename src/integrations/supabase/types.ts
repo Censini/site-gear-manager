@@ -176,9 +176,11 @@ export type Database = {
           contact_phone: string | null
           country: string
           created_at: string | null
+          floorplan_url: string | null
           id: string
           location: string
           name: string
+          rack_photos_urls: string[] | null
           updated_at: string | null
           user_id: string | null
         }
@@ -189,9 +191,11 @@ export type Database = {
           contact_phone?: string | null
           country: string
           created_at?: string | null
+          floorplan_url?: string | null
           id?: string
           location: string
           name: string
+          rack_photos_urls?: string[] | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -202,9 +206,11 @@ export type Database = {
           contact_phone?: string | null
           country?: string
           created_at?: string | null
+          floorplan_url?: string | null
           id?: string
           location?: string
           name?: string
+          rack_photos_urls?: string[] | null
           updated_at?: string | null
           user_id?: string | null
         }
