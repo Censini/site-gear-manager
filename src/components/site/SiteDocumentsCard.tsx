@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { File, ImageIcon, Maximize2, Minimize2, Upload, Loader2 } from "lucide-react";
+import { File, ImageIcon, Maximize2, Minimize2, Upload, Loader2, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,12 +9,14 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface SiteDocumentsCardProps {
   site: Site;
+  bucketReady: boolean;
 }
 
-const SiteDocumentsCard = ({ site }: SiteDocumentsCardProps) => {
+const SiteDocumentsCard = ({ site, bucketReady }: SiteDocumentsCardProps) => {
   const [activeTab, setActiveTab] = useState("floorplans");
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -30,6 +32,11 @@ const SiteDocumentsCard = ({ site }: SiteDocumentsCardProps) => {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: "floorplan" | "rackPhoto") => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
+    
+    if (!bucketReady) {
+      toast.error("Le stockage n'est pas disponible. Contactez l'administrateur.");
+      return;
+    }
 
     const file = files[0];
     setIsUploading(true);
@@ -42,16 +49,24 @@ const SiteDocumentsCard = ({ site }: SiteDocumentsCardProps) => {
       const filePath = `sites/${site.id}/${type === "floorplan" ? "floorplans" : "rack-photos"}/${fileName}`;
 
       // Upload file to Supabase storage
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError, data } = await supabase.storage
         .from('site-documents')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Error uploading file:", uploadError);
+        throw uploadError;
+      }
+
+      // Log successful upload
+      console.log("File uploaded successfully:", data);
 
       // Get the public URL of the uploaded file
       const { data: publicUrlData } = supabase.storage
         .from('site-documents')
         .getPublicUrl(filePath);
+
+      console.log("Public URL data:", publicUrlData);
 
       // Update the site record with the new file URL
       if (type === "floorplan") {
@@ -94,6 +109,24 @@ const SiteDocumentsCard = ({ site }: SiteDocumentsCardProps) => {
       event.target.value = '';
     }
   };
+
+  if (!bucketReady) {
+    return (
+      <Card className="col-span-1 md:col-span-2">
+        <CardHeader>
+          <CardTitle>Documentation</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            <AlertDescription>
+              Le stockage de documents n'est pas disponible actuellement. Veuillez contacter l'administrateur pour créer le bucket "site-documents".
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className={isFullScreen ? "col-span-3" : "col-span-1 md:col-span-2"}>

@@ -7,12 +7,14 @@ import SiteHeader from "@/components/site/SiteHeader";
 import SiteInfoCard from "@/components/site/SiteInfoCard";
 import SiteResourcesCard from "@/components/site/SiteResourcesCard";
 import SiteDocumentsCard from "@/components/site/SiteDocumentsCard";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [bucketReady, setBucketReady] = useState(false);
   
   // More debugging logs
   console.log("ID du site depuis l'URL:", id);
@@ -30,33 +32,38 @@ const SiteDetail = () => {
     refetch 
   } = useSiteData(id);
 
-  // Ensure storage bucket exists
+  // Check storage access
   useEffect(() => {
-    const checkAndCreateBucket = async () => {
+    const verifyStorageAccess = async () => {
       try {
-        // Check if bucket exists first
-        const { data: buckets } = await supabase.storage.listBuckets();
+        // First, get existing buckets to check if our bucket exists
+        const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+        
+        console.log("Available buckets:", buckets);
+        
+        if (listError) {
+          console.error("Error listing buckets:", listError);
+          toast.error("Erreur d'accès au stockage. Vérifiez vos permissions.");
+          return;
+        }
+        
+        // Check if our bucket exists
         const bucketExists = buckets?.some(bucket => bucket.name === 'site-documents');
         
-        if (!bucketExists) {
-          // Create bucket if it doesn't exist
-          console.log("Creating site-documents bucket");
-          const { error } = await supabase.storage.createBucket('site-documents', {
-            public: true,
-          });
-          
-          if (error) {
-            console.error("Error creating bucket:", error);
-          } else {
-            console.log("Bucket created successfully");
-          }
+        if (bucketExists) {
+          console.log("Bucket site-documents already exists");
+          setBucketReady(true);
+        } else {
+          toast.error("Le bucket de stockage n'existe pas. Contactez l'administrateur.");
+          console.error("Storage bucket does not exist and cannot be created from frontend");
         }
       } catch (error) {
-        console.error("Error checking/creating bucket:", error);
+        console.error("Error checking storage access:", error);
+        toast.error("Erreur d'accès au stockage");
       }
     };
     
-    checkAndCreateBucket();
+    verifyStorageAccess();
   }, []);
 
   // Handle site deletion
@@ -106,7 +113,7 @@ const SiteDetail = () => {
       </div>
       
       <div className="grid gap-6 md:grid-cols-3">
-        <SiteDocumentsCard site={site} />
+        <SiteDocumentsCard site={site} bucketReady={bucketReady} />
       </div>
     </div>
   );
