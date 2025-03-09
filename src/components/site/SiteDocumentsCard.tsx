@@ -1,15 +1,16 @@
 
 import { useState } from "react";
-import { File, ImageIcon, Maximize2, Minimize2, Upload, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
+import { File, ImageIcon, Maximize2, Minimize2, Upload, Loader2, AlertTriangle, RefreshCw, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Site } from "@/types/types";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SiteDocumentsCardProps {
   site: Site;
@@ -23,6 +24,11 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
   const [isUploading, setIsUploading] = useState(false);
   const [uploadType, setUploadType] = useState<"floorplan" | "rackPhoto" | null>(null);
   const [refreshingPage, setRefreshingPage] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  const { session } = useAuth();
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -42,6 +48,12 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
     
     if (!bucketReady) {
       toast.error("Le stockage n'est pas disponible. Veuillez rafraîchir la page si vous venez de créer le bucket.");
+      return;
+    }
+    
+    // Vérifier si l'utilisateur est authentifié
+    if (!session) {
+      toast.error("Vous devez être connecté pour uploader des fichiers");
       return;
     }
 
@@ -114,6 +126,51 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
       setUploadType(null);
       // Reset the input
       event.target.value = '';
+    }
+  };
+  
+  const handleDeleteImage = async () => {
+    if (!selectedImage || !session) return;
+    
+    setIsDeleting(true);
+    
+    try {
+      // Extraire le chemin du fichier depuis l'URL
+      const url = new URL(selectedImage);
+      const pathParts = url.pathname.split('/');
+      const filename = pathParts[pathParts.length - 1];
+      const filePath = `sites/${site.id}/rack-photos/${filename}`;
+      
+      // Supprimer le fichier du stockage
+      const { error: deleteError } = await supabase.storage
+        .from('site-documents')
+        .remove([filePath]);
+        
+      if (deleteError) throw deleteError;
+      
+      // Mettre à jour la liste des URLs dans la base de données
+      const updatedUrls = site.rackPhotosUrls?.filter(url => url !== selectedImage) || [];
+      
+      const { error: updateError } = await supabase
+        .from('sites')
+        .update({ rack_photos_urls: updatedUrls })
+        .eq('id', site.id);
+        
+      if (updateError) throw updateError;
+      
+      // Mettre à jour l'état local
+      site.rackPhotosUrls = updatedUrls;
+      
+      toast.success("Photo supprimée avec succès");
+      setShowDeleteConfirm(false);
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+      toast.error(`Erreur: ${(error as Error).message}`);
+    } finally {
+      setIsDeleting(false);
+      setSelectedImage(null);
+      // Actualiser la page pour montrer les changements
+      window.location.reload();
     }
   };
 
@@ -197,7 +254,7 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
                 <Button 
                   variant="outline" 
                   className="flex items-center gap-2"
-                  disabled={isUploading && uploadType === "floorplan"}
+                  disabled={isUploading && uploadType === "floorplan" || !session}
                 >
                   {isUploading && uploadType === "floorplan" ? (
                     <>
@@ -215,11 +272,20 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
                     accept=".pdf"
                     className="absolute inset-0 opacity-0 cursor-pointer"
                     onChange={(e) => handleFileUpload(e, "floorplan")}
-                    disabled={isUploading}
+                    disabled={isUploading || !session}
                   />
                 </Button>
               </div>
             </div>
+            
+            {!session && (
+              <Alert className="mb-4">
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                <AlertDescription>
+                  Vous devez être connecté pour uploader des documents
+                </AlertDescription>
+              </Alert>
+            )}
             
             {hasPDFs ? (
               <div className="h-[500px] border rounded-md overflow-hidden">
@@ -243,7 +309,7 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
                 <Button 
                   variant="outline" 
                   className="flex items-center gap-2"
-                  disabled={isUploading && uploadType === "rackPhoto"}
+                  disabled={isUploading && uploadType === "rackPhoto" || !session}
                 >
                   {isUploading && uploadType === "rackPhoto" ? (
                     <>
@@ -261,23 +327,46 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
                     accept="image/*"
                     className="absolute inset-0 opacity-0 cursor-pointer"
                     onChange={(e) => handleFileUpload(e, "rackPhoto")}
-                    disabled={isUploading}
+                    disabled={isUploading || !session}
                   />
                 </Button>
               </div>
             </div>
+            
+            {!session && (
+              <Alert className="mb-4">
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                <AlertDescription>
+                  Vous devez être connecté pour uploader des documents
+                </AlertDescription>
+              </Alert>
+            )}
             
             {hasImages ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {site.rackPhotosUrls.map((url, index) => (
                   <Dialog key={index}>
                     <DialogTrigger asChild>
-                      <div className="cursor-pointer hover:opacity-80 transition-opacity border rounded-md overflow-hidden">
+                      <div className="cursor-pointer hover:opacity-80 transition-opacity border rounded-md overflow-hidden relative group">
                         <img 
                           src={url} 
                           alt={`Photo de baie ${index + 1}`} 
                           className="w-full h-36 object-cover"
                         />
+                        {session && (
+                          <Button
+                            size="icon"
+                            variant="destructive"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedImage(url);
+                              setShowDeleteConfirm(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </DialogTrigger>
                     <DialogContent className="max-w-3xl">
@@ -301,6 +390,35 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
           </TabsContent>
         </Tabs>
       </CardContent>
+      
+      {/* Confirm Delete Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer cette photo ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>Annuler</Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteImage}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Suppression...
+                </>
+              ) : (
+                'Supprimer'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

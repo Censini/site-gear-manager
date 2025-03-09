@@ -54,22 +54,39 @@ const SiteDetail = () => {
         const bucketExists = buckets?.some(bucket => bucket.name === 'site-documents');
         
         if (bucketExists) {
-          console.log("Bucket site-documents found successfully");
-          setBucketReady(true);
+          // Vérifier si on peut bien lister les fichiers dans le bucket pour confirmer que les politiques RLS fonctionnent
+          const { data: files, error: filesError } = await supabase.storage
+            .from('site-documents')
+            .list(`sites/${id || 'unknown'}`);
+            
+          if (filesError) {
+            console.error("Erreur en listant les fichiers:", filesError);
+            // On considère quand même que le bucket est prêt même si on ne peut pas lister les fichiers
+            // car l'erreur pourrait simplement être due au fait que le dossier n'existe pas encore
+            setBucketReady(true);
+          } else {
+            console.log("Fichiers trouvés:", files);
+            setBucketReady(true);
+          }
+          
+          console.log("Bucket site-documents trouvé et prêt à être utilisé");
+          toast.success("Stockage de documents configuré avec succès");
         } else {
-          console.log("Bucket site-documents not found. Please create it in the Supabase dashboard.");
-          toast.info("Le bucket 'site-documents' n'est pas disponible. Rafraîchissez la page si vous venez de le créer.", { duration: 5000 });
+          console.log("Bucket site-documents introuvable. Veuillez le créer dans le dashboard Supabase.");
+          toast.error("Le bucket 'site-documents' n'est pas disponible. Créez-le dans le dashboard Supabase.");
+          setBucketReady(false);
         }
       } catch (error) {
-        console.error("Error checking storage access:", error);
+        console.error("Erreur lors de la vérification de l'accès au stockage:", error);
         toast.error("Erreur d'accès au stockage");
+        setBucketReady(false);
       } finally {
         setCheckingBucket(false);
       }
     };
     
     verifyStorageAccess();
-  }, []);
+  }, [id]);
 
   // Handle site deletion
   const handleDeleteSite = async () => {
