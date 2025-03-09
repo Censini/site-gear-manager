@@ -32,49 +32,45 @@ const SiteDetail = () => {
     refetch 
   } = useSiteData(id);
 
-  // Check storage access - Improved bucket detection
+  // Check storage access - Complètement repensée pour les buckets publics
   useEffect(() => {
     const verifyStorageAccess = async () => {
       try {
         setCheckingBucket(true);
         
-        // Essayer d'abord une opération simple qui échouera si le bucket n'existe pas
-        // Au lieu de simplement lister les buckets, essayons directement de lister les fichiers
-        const { data: files, error: directCheckError } = await supabase.storage
+        // Tester la connectivité au bucket en supposant qu'il existe et qu'il est public
+        // Une simple vérification si nous pouvons récupérer l'URL publique
+        const testUrl = supabase.storage
           .from('site-documents')
-          .list();
+          .getPublicUrl('test.txt');
           
-        if (directCheckError) {
-          console.error("Erreur lors de la vérification directe du bucket:", directCheckError);
+        if (testUrl.data.publicUrl) {
+          console.log("URL publique générée, le bucket semble accessible:", testUrl.data.publicUrl);
           
-          // Vérifions quand même la liste des buckets
-          const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-          
-          console.log("Available buckets:", buckets);
-          
-          if (listError) {
-            console.error("Erreur listing buckets:", listError);
-            toast.error("Erreur d'accès au stockage. Vérifiez vos permissions.");
-            setBucketReady(false);
-          } else {
-            // Vérifier si notre bucket existe dans la liste
-            const bucketExists = buckets?.some(bucket => bucket.name === 'site-documents');
+          // Essayer de lister le contenu pour vérifier la connexion réelle
+          const { data: files, error: listError } = await supabase.storage
+            .from('site-documents')
+            .list();
             
-            if (bucketExists) {
-              console.log("Bucket site-documents trouvé dans la liste mais l'accès direct a échoué");
-              setBucketReady(true);
-              toast.success("Stockage de documents configuré");
+          if (listError) {
+            console.error("Erreur lors de la tentative de liste des fichiers:", listError);
+            
+            if (listError.message.includes("does not exist")) {
+              toast.error("Le bucket 'site-documents' n'existe pas. Créez-le dans le dashboard Supabase et assurez-vous qu'il est public.");
+              setBucketReady(false);
             } else {
-              console.log("Bucket site-documents introuvable. Veuillez le créer dans le dashboard Supabase.");
-              toast.error("Le bucket 'site-documents' n'est pas disponible. Créez-le dans le dashboard Supabase.");
+              toast.error(`Erreur d'accès au bucket: ${listError.message}`);
               setBucketReady(false);
             }
+          } else {
+            console.log("Bucket vérifié et accessible, fichiers:", files);
+            toast.success("Stockage de documents prêt à l'utilisation");
+            setBucketReady(true);
           }
         } else {
-          // La vérification directe a réussi, le bucket existe et est accessible
-          console.log("Bucket site-documents vérifié avec succès:", files);
-          setBucketReady(true);
-          toast.success("Stockage de documents prêt à l'utilisation");
+          console.error("Impossible de générer une URL publique");
+          toast.error("Le bucket n'est pas correctement configuré comme public");
+          setBucketReady(false);
         }
       } catch (error) {
         console.error("Erreur lors de la vérification de l'accès au stockage:", error);
