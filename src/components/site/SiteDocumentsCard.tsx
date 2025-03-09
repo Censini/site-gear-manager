@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { File, ImageIcon, Maximize2, Minimize2, Upload, Loader2, AlertTriangle, RefreshCw, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +26,8 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingFloorplan, setDeletingFloorplan] = useState(false);
+  const [showDeleteFloorplanConfirm, setShowDeleteFloorplanConfirm] = useState(false);
   
   const { session } = useAuth();
 
@@ -51,7 +52,6 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
       return;
     }
     
-    // Vérifier si l'utilisateur est authentifié
     if (!session) {
       toast.error("Vous devez être connecté pour uploader des fichiers");
       return;
@@ -62,12 +62,10 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
     setUploadType(type);
 
     try {
-      // Generate a unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${uuidv4()}.${fileExt}`;
       const filePath = `sites/${site.id}/${type === "floorplan" ? "floorplans" : "rack-photos"}/${fileName}`;
 
-      // Upload file to Supabase storage
       const { error: uploadError, data } = await supabase.storage
         .from('site-documents')
         .upload(filePath, file);
@@ -77,17 +75,14 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
         throw uploadError;
       }
 
-      // Log successful upload
       console.log("File uploaded successfully:", data);
 
-      // Get the public URL of the uploaded file
       const { data: publicUrlData } = supabase.storage
         .from('site-documents')
         .getPublicUrl(filePath);
 
       console.log("Public URL data:", publicUrlData);
 
-      // Update the site record with the new file URL
       if (type === "floorplan") {
         const { error: updateError } = await supabase
           .from('sites')
@@ -96,10 +91,8 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
 
         if (updateError) throw updateError;
         
-        // Update local state
         site.floorplanUrl = publicUrlData.publicUrl;
       } else {
-        // For rack photos, we need to append to the existing array
         let updatedUrls = site.rackPhotosUrls || [];
         updatedUrls = [...updatedUrls, publicUrlData.publicUrl];
         
@@ -110,13 +103,11 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
 
         if (updateError) throw updateError;
         
-        // Update local state
         site.rackPhotosUrls = updatedUrls;
       }
 
       toast.success(`${type === "floorplan" ? "Plan du local" : "Photo de baie"} ajouté avec succès`);
       
-      // Refresh the page to show the new uploads
       window.location.reload();
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -124,7 +115,6 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
     } finally {
       setIsUploading(false);
       setUploadType(null);
-      // Reset the input
       event.target.value = '';
     }
   };
@@ -135,20 +125,17 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
     setIsDeleting(true);
     
     try {
-      // Extraire le chemin du fichier depuis l'URL
       const url = new URL(selectedImage);
       const pathParts = url.pathname.split('/');
       const filename = pathParts[pathParts.length - 1];
       const filePath = `sites/${site.id}/rack-photos/${filename}`;
       
-      // Supprimer le fichier du stockage
       const { error: deleteError } = await supabase.storage
         .from('site-documents')
         .remove([filePath]);
         
       if (deleteError) throw deleteError;
       
-      // Mettre à jour la liste des URLs dans la base de données
       const updatedUrls = site.rackPhotosUrls?.filter(url => url !== selectedImage) || [];
       
       const { error: updateError } = await supabase
@@ -158,7 +145,6 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
         
       if (updateError) throw updateError;
       
-      // Mettre à jour l'état local
       site.rackPhotosUrls = updatedUrls;
       
       toast.success("Photo supprimée avec succès");
@@ -169,7 +155,43 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
     } finally {
       setIsDeleting(false);
       setSelectedImage(null);
-      // Actualiser la page pour montrer les changements
+      window.location.reload();
+    }
+  };
+
+  const handleDeleteFloorplan = async () => {
+    if (!site.floorplanUrl || !session) return;
+    
+    setDeletingFloorplan(true);
+    
+    try {
+      const url = new URL(site.floorplanUrl);
+      const pathParts = url.pathname.split('/');
+      const filename = pathParts[pathParts.length - 1];
+      const filePath = `sites/${site.id}/floorplans/${filename}`;
+      
+      const { error: deleteError } = await supabase.storage
+        .from('site-documents')
+        .remove([filePath]);
+        
+      if (deleteError) throw deleteError;
+      
+      const { error: updateError } = await supabase
+        .from('sites')
+        .update({ floorplan_url: null })
+        .eq('id', site.id);
+        
+      if (updateError) throw updateError;
+      
+      site.floorplanUrl = null;
+      
+      toast.success("Plan des locaux supprimé avec succès");
+      setShowDeleteFloorplanConfirm(false);
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+      toast.error(`Erreur: ${(error as Error).message}`);
+    } finally {
+      setDeletingFloorplan(false);
       window.location.reload();
     }
   };
@@ -249,7 +271,29 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
           </TabsList>
           
           <TabsContent value="floorplans" className="space-y-4">
-            <div className="mb-4 flex justify-end">
+            <div className="mb-4 flex justify-between">
+              <div>
+                {hasPDFs && session && (
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={() => setShowDeleteFloorplanConfirm(true)}
+                    disabled={deletingFloorplan}
+                  >
+                    {deletingFloorplan ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Suppression...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Supprimer le plan
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
               <div className="relative">
                 <Button 
                   variant="outline" 
@@ -370,6 +414,9 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
                       </div>
                     </DialogTrigger>
                     <DialogContent className="max-w-3xl">
+                      <DialogHeader>
+                        <DialogTitle>Photo de baie {index + 1}</DialogTitle>
+                      </DialogHeader>
                       <div className="w-full h-full flex items-center justify-center">
                         <img 
                           src={url} 
@@ -391,7 +438,6 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
         </Tabs>
       </CardContent>
       
-      {/* Confirm Delete Dialog */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent>
           <DialogHeader>
@@ -408,6 +454,34 @@ const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: Site
               disabled={isDeleting}
             >
               {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Suppression...
+                </>
+              ) : (
+                'Supprimer'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteFloorplanConfirm} onOpenChange={setShowDeleteFloorplanConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer le plan des locaux ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteFloorplanConfirm(false)}>Annuler</Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteFloorplan}
+              disabled={deletingFloorplan}
+            >
+              {deletingFloorplan ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   Suppression...
