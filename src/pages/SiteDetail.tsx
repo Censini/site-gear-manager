@@ -17,7 +17,6 @@ const SiteDetail = () => {
   const [bucketReady, setBucketReady] = useState(false);
   const [checkingBucket, setCheckingBucket] = useState(true);
   
-  // More debugging logs
   console.log("ID du site depuis l'URL:", id);
   console.log("Type d'ID du site:", typeof id);
   
@@ -33,48 +32,49 @@ const SiteDetail = () => {
     refetch 
   } = useSiteData(id);
 
-  // Check storage access
+  // Check storage access - Improved bucket detection
   useEffect(() => {
     const verifyStorageAccess = async () => {
       try {
         setCheckingBucket(true);
-        // First, get existing buckets to check if our bucket exists
-        const { data: buckets, error: listError } = await supabase.storage.listBuckets();
         
-        console.log("Available buckets:", buckets);
-        
-        if (listError) {
-          console.error("Error listing buckets:", listError);
-          toast.error("Erreur d'accès au stockage. Vérifiez vos permissions.");
-          setCheckingBucket(false);
-          return;
-        }
-        
-        // Check if our bucket exists
-        const bucketExists = buckets?.some(bucket => bucket.name === 'site-documents');
-        
-        if (bucketExists) {
-          // Vérifier si on peut bien lister les fichiers dans le bucket pour confirmer que les politiques RLS fonctionnent
-          const { data: files, error: filesError } = await supabase.storage
-            .from('site-documents')
-            .list(`sites/${id || 'unknown'}`);
-            
-          if (filesError) {
-            console.error("Erreur en listant les fichiers:", filesError);
-            // On considère quand même que le bucket est prêt même si on ne peut pas lister les fichiers
-            // car l'erreur pourrait simplement être due au fait que le dossier n'existe pas encore
-            setBucketReady(true);
-          } else {
-            console.log("Fichiers trouvés:", files);
-            setBucketReady(true);
-          }
+        // Essayer d'abord une opération simple qui échouera si le bucket n'existe pas
+        // Au lieu de simplement lister les buckets, essayons directement de lister les fichiers
+        const { data: files, error: directCheckError } = await supabase.storage
+          .from('site-documents')
+          .list();
           
-          console.log("Bucket site-documents trouvé et prêt à être utilisé");
-          toast.success("Stockage de documents configuré avec succès");
+        if (directCheckError) {
+          console.error("Erreur lors de la vérification directe du bucket:", directCheckError);
+          
+          // Vérifions quand même la liste des buckets
+          const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+          
+          console.log("Available buckets:", buckets);
+          
+          if (listError) {
+            console.error("Erreur listing buckets:", listError);
+            toast.error("Erreur d'accès au stockage. Vérifiez vos permissions.");
+            setBucketReady(false);
+          } else {
+            // Vérifier si notre bucket existe dans la liste
+            const bucketExists = buckets?.some(bucket => bucket.name === 'site-documents');
+            
+            if (bucketExists) {
+              console.log("Bucket site-documents trouvé dans la liste mais l'accès direct a échoué");
+              setBucketReady(true);
+              toast.success("Stockage de documents configuré");
+            } else {
+              console.log("Bucket site-documents introuvable. Veuillez le créer dans le dashboard Supabase.");
+              toast.error("Le bucket 'site-documents' n'est pas disponible. Créez-le dans le dashboard Supabase.");
+              setBucketReady(false);
+            }
+          }
         } else {
-          console.log("Bucket site-documents introuvable. Veuillez le créer dans le dashboard Supabase.");
-          toast.error("Le bucket 'site-documents' n'est pas disponible. Créez-le dans le dashboard Supabase.");
-          setBucketReady(false);
+          // La vérification directe a réussi, le bucket existe et est accessible
+          console.log("Bucket site-documents vérifié avec succès:", files);
+          setBucketReady(true);
+          toast.success("Stockage de documents prêt à l'utilisation");
         }
       } catch (error) {
         console.error("Erreur lors de la vérification de l'accès au stockage:", error);
@@ -85,7 +85,9 @@ const SiteDetail = () => {
       }
     };
     
-    verifyStorageAccess();
+    if (id) {
+      verifyStorageAccess();
+    }
   }, [id]);
 
   // Handle site deletion
