@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { File, ImageIcon, Maximize2, Minimize2, Upload, Loader2, AlertTriangle } from "lucide-react";
+import { File, ImageIcon, Maximize2, Minimize2, Upload, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,13 +14,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 interface SiteDocumentsCardProps {
   site: Site;
   bucketReady: boolean;
+  isCheckingBucket?: boolean;
 }
 
-const SiteDocumentsCard = ({ site, bucketReady }: SiteDocumentsCardProps) => {
+const SiteDocumentsCard = ({ site, bucketReady, isCheckingBucket = false }: SiteDocumentsCardProps) => {
   const [activeTab, setActiveTab] = useState("floorplans");
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadType, setUploadType] = useState<"floorplan" | "rackPhoto" | null>(null);
+  const [refreshingPage, setRefreshingPage] = useState(false);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -29,12 +31,17 @@ const SiteDocumentsCard = ({ site, bucketReady }: SiteDocumentsCardProps) => {
   const hasPDFs = site.floorplanUrl && site.floorplanUrl.length > 0;
   const hasImages = site.rackPhotosUrls && site.rackPhotosUrls.length > 0;
 
+  const refreshPage = () => {
+    setRefreshingPage(true);
+    window.location.reload();
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: "floorplan" | "rackPhoto") => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
     
     if (!bucketReady) {
-      toast.error("Le stockage n'est pas disponible. Contactez l'administrateur.");
+      toast.error("Le stockage n'est pas disponible. Veuillez rafraîchir la page si vous venez de créer le bucket.");
       return;
     }
 
@@ -110,6 +117,22 @@ const SiteDocumentsCard = ({ site, bucketReady }: SiteDocumentsCardProps) => {
     }
   };
 
+  if (isCheckingBucket) {
+    return (
+      <Card className="col-span-1 md:col-span-2">
+        <CardHeader>
+          <CardTitle>Documentation</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Vérification de l'accès au stockage...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!bucketReady) {
     return (
       <Card className="col-span-1 md:col-span-2">
@@ -120,9 +143,30 @@ const SiteDocumentsCard = ({ site, bucketReady }: SiteDocumentsCardProps) => {
           <Alert variant="destructive" className="mb-4">
             <AlertTriangle className="h-4 w-4 mr-2" />
             <AlertDescription>
-              Le stockage de documents n'est pas disponible actuellement. Veuillez contacter l'administrateur pour créer le bucket "site-documents".
+              Le bucket "site-documents" n'est pas trouvé. Si vous venez de le créer, veuillez rafraîchir la page.
             </AlertDescription>
           </Alert>
+          
+          <div className="flex justify-center mt-4">
+            <Button 
+              onClick={refreshPage} 
+              variant="outline" 
+              className="flex items-center gap-2"
+              disabled={refreshingPage}
+            >
+              {refreshingPage ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Rafraîchissement...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4" />
+                  Rafraîchir la page
+                </>
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );

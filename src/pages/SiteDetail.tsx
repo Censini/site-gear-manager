@@ -15,6 +15,7 @@ const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [bucketReady, setBucketReady] = useState(false);
+  const [checkingBucket, setCheckingBucket] = useState(true);
   
   // More debugging logs
   console.log("ID du site depuis l'URL:", id);
@@ -36,6 +37,7 @@ const SiteDetail = () => {
   useEffect(() => {
     const verifyStorageAccess = async () => {
       try {
+        setCheckingBucket(true);
         // First, get existing buckets to check if our bucket exists
         const { data: buckets, error: listError } = await supabase.storage.listBuckets();
         
@@ -44,6 +46,7 @@ const SiteDetail = () => {
         if (listError) {
           console.error("Error listing buckets:", listError);
           toast.error("Erreur d'accès au stockage. Vérifiez vos permissions.");
+          setCheckingBucket(false);
           return;
         }
         
@@ -51,15 +54,17 @@ const SiteDetail = () => {
         const bucketExists = buckets?.some(bucket => bucket.name === 'site-documents');
         
         if (bucketExists) {
-          console.log("Bucket site-documents already exists");
+          console.log("Bucket site-documents found successfully");
           setBucketReady(true);
         } else {
-          toast.error("Le bucket de stockage n'existe pas. Contactez l'administrateur.");
-          console.error("Storage bucket does not exist and cannot be created from frontend");
+          console.log("Bucket site-documents not found. Please create it in the Supabase dashboard.");
+          toast.info("Le bucket 'site-documents' n'est pas disponible. Rafraîchissez la page si vous venez de le créer.", { duration: 5000 });
         }
       } catch (error) {
         console.error("Error checking storage access:", error);
         toast.error("Erreur d'accès au stockage");
+      } finally {
+        setCheckingBucket(false);
       }
     };
     
@@ -113,7 +118,11 @@ const SiteDetail = () => {
       </div>
       
       <div className="grid gap-6 md:grid-cols-3">
-        <SiteDocumentsCard site={site} bucketReady={bucketReady} />
+        <SiteDocumentsCard 
+          site={site} 
+          bucketReady={bucketReady} 
+          isCheckingBucket={checkingBucket}
+        />
       </div>
     </div>
   );
