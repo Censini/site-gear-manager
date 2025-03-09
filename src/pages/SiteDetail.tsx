@@ -7,6 +7,8 @@ import SiteHeader from "@/components/site/SiteHeader";
 import SiteInfoCard from "@/components/site/SiteInfoCard";
 import SiteResourcesCard from "@/components/site/SiteResourcesCard";
 import SiteDocumentsCard from "@/components/site/SiteDocumentsCard";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +29,35 @@ const SiteDetail = () => {
     deleteSite,
     refetch 
   } = useSiteData(id);
+
+  // Ensure storage bucket exists
+  useEffect(() => {
+    const checkAndCreateBucket = async () => {
+      try {
+        // Check if bucket exists first
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const bucketExists = buckets?.some(bucket => bucket.name === 'site-documents');
+        
+        if (!bucketExists) {
+          // Create bucket if it doesn't exist
+          console.log("Creating site-documents bucket");
+          const { error } = await supabase.storage.createBucket('site-documents', {
+            public: true,
+          });
+          
+          if (error) {
+            console.error("Error creating bucket:", error);
+          } else {
+            console.log("Bucket created successfully");
+          }
+        }
+      } catch (error) {
+        console.error("Error checking/creating bucket:", error);
+      }
+    };
+    
+    checkAndCreateBucket();
+  }, []);
 
   // Handle site deletion
   const handleDeleteSite = async () => {
