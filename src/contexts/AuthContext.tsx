@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +9,7 @@ type AuthContextType = {
   isLoading: boolean;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
+  signInWithGitHub: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -77,6 +79,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const signInWithGitHub = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: window.location.origin + '/auth/callback',
+        }
+      });
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('GitHub sign in error:', error);
+      toast({
+        title: "Échec de connexion GitHub",
+        description: error instanceof Error ? error.message : "Une erreur s'est produite pendant la connexion avec GitHub",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -91,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, isLoading, signInWithEmail, signUpWithEmail, signOut }}>
+    <AuthContext.Provider value={{ session, isLoading, signInWithEmail, signUpWithEmail, signInWithGitHub, signOut }}>
       {children}
     </AuthContext.Provider>
   );

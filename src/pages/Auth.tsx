@@ -5,11 +5,12 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Github } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 
 const Auth = () => {
-  const { session, signInWithEmail, signUpWithEmail } = useAuth();
+  const { session, signInWithEmail, signUpWithEmail, signInWithGitHub } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   
@@ -76,6 +77,19 @@ const Auth = () => {
     }
   };
 
+  const handleGitHubSignIn = async () => {
+    setError(null);
+    try {
+      await signInWithGitHub();
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Une erreur inattendue s'est produite lors de la connexion avec GitHub");
+      }
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="w-full max-w-md">
@@ -132,6 +146,24 @@ const Auth = () => {
                   {isSubmitting ? "Connexion en cours..." : "Se connecter"}
                 </Button>
               </form>
+
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-muted-foreground">Ou continuer avec</span>
+                </div>
+              </div>
+
+              <Button 
+                variant="outline" 
+                className="w-full flex items-center justify-center gap-2"
+                onClick={handleGitHubSignIn}
+              >
+                <Github className="h-4 w-4" />
+                GitHub
+              </Button>
             </CardContent>
           </TabsContent>
           
@@ -186,6 +218,24 @@ const Auth = () => {
                   {isSubmitting ? "Inscription en cours..." : "S'inscrire"}
                 </Button>
               </form>
+
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-muted-foreground">Ou continuer avec</span>
+                </div>
+              </div>
+
+              <Button 
+                variant="outline" 
+                className="w-full flex items-center justify-center gap-2"
+                onClick={handleGitHubSignIn}
+              >
+                <Github className="h-4 w-4" />
+                GitHub
+              </Button>
             </CardContent>
           </TabsContent>
         </Tabs>
