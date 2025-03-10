@@ -1,4 +1,4 @@
-
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import EquipmentTable from "@/components/equipment/EquipmentTable";
@@ -8,8 +8,16 @@ import { Equipment } from "@/types/types";
 import { useNavigate } from "react-router-dom";
 import { useEquipmentSearch } from "@/hooks/useEquipmentSearch";
 
+// Define sorting types
+type SortColumn = keyof Equipment;
+type SortDirection = 'asc' | 'desc';
+
 const EquipmentPage = () => {
   const navigate = useNavigate();
+
+  // Add state for sorting
+  const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   const { data: equipmentList, error, isLoading: isQueryLoading } = useQuery({
     queryKey: ["equipment"],
@@ -54,6 +62,44 @@ const EquipmentPage = () => {
     filteredEquipment 
   } = useEquipmentSearch(equipmentList || []);
 
+  // Sorting function
+  const sortedEquipment = () => {
+    if (!sortColumn) return filteredEquipment;
+
+    return [...filteredEquipment].sort((a, b) => {
+      const valueA = a[sortColumn];
+      const valueB = b[sortColumn];
+
+      // Handle different types of sorting
+      if (typeof valueA === 'string' && typeof valueB === 'string') {
+        return sortDirection === 'asc'
+          ? valueA.localeCompare(valueB)
+          : valueB.localeCompare(valueA);
+      }
+
+      if (typeof valueA === 'number' && typeof valueB === 'number') {
+        return sortDirection === 'asc'
+          ? valueA - valueB
+          : valueB - valueA;
+      }
+
+      // Fallback for other types or when values are different types
+      return 0;
+    });
+  };
+
+  // Sorting handler
+  const handleSort = (column: SortColumn) => {
+    // If clicking the same column, toggle direction
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // If clicking a new column, default to ascending
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
   const handleAddEquipment = () => {
     navigate("/equipment/add");
   };
@@ -92,8 +138,11 @@ const EquipmentPage = () => {
       />
       
       <EquipmentTable 
-        equipmentList={filteredEquipment} 
+        equipmentList={sortedEquipment()} 
         onAddEquipment={handleAddEquipment}
+        sortColumn={sortColumn}
+        sortDirection={sortDirection}
+        onSort={handleSort}
       />
     </div>
   );

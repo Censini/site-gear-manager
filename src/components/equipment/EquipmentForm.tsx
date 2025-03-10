@@ -47,12 +47,13 @@ interface EquipmentFormProps {
 const EquipmentForm = ({ 
   initialData, 
   initialValues, 
-  mode = "add", 
+  mode: explicitMode = "add", 
   equipmentId,
   onSubmit,
   isSubmitting: externalIsSubmitting,
   onCancel 
 }: EquipmentFormProps) => {
+  const mode = equipmentId && equipmentId.trim() !== "" ? "edit" : explicitMode;
   const navigate = useNavigate();
   const { toast } = useToast();
   const { session } = useAuth();
@@ -164,25 +165,32 @@ const EquipmentForm = ({
         status: equipmentData.status,
         netbios: equipmentData.netbios,
         user_id: session.user.id,
-        site_id: equipmentData.siteId === "not_deployed" ? null : equipmentData.siteId
+        site_id: !equipmentData.siteId || equipmentData.siteId === "not_deployed" ? null : equipmentData.siteId
       };
 
       let result;
-      
-      if (mode === "add") {
-        result = await supabase
-          .from("equipment")
-          .insert(dbData)
-          .select("id")
-          .single();
-      } else if (mode === "edit" && equipmentId) {
-        result = await supabase
-          .from("equipment")
-          .update(dbData)
-          .eq("id", equipmentId)
-          .select("id")
-          .single();
-      }
+    
+if (mode === "add") {
+  result = await supabase
+    .from("equipment")
+    .insert(dbData)
+    .select("id")
+    .single();
+} else {
+  // Mode edit détecté
+  if (!equipmentId || equipmentId.trim() === "") {
+    throw new Error("L'identifiant de l'équipement est manquant ou invalide");
+  }
+  
+  console.log("Mise à jour de l'équipement avec ID:", equipmentId);
+  
+  result = await supabase
+    .from("equipment")
+    .update(dbData)
+    .eq("id", equipmentId)
+    .select("id")
+    .single();
+}
 
       const { data, error } = result || {};
 
