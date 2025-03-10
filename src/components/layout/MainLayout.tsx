@@ -100,7 +100,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
             sidebarCollapsed ? "ml-0 w-full" : "md:ml-0"
           )}
         >
-          <div className="max-w-6xl mx-auto">
+          <div className="w-full mx-auto">
             {children}
           </div>
         </main>

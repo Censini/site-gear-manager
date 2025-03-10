@@ -17,6 +17,9 @@ const Dashboard = () => {
   const [connections, setConnections] = useState<any[]>([]);
   const [providers, setProviders] = useState<{name: string, count: number}[]>([]);
   const [siteContacts, setSiteContacts] = useState<{name: string, phone: string, site: string}[]>([]);
+  const [showAllContacts, setShowAllContacts] = useState(false);
+  const [showOnlyIssueContacts, setShowOnlyIssueContacts] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [stats, setStats] = useState<DashboardStats>({
     totalSites: 0,
     totalEquipment: 0,
@@ -176,7 +179,42 @@ const Dashboard = () => {
   const equipmentWithIssues = equipment
     .filter((item) => item.status === "maintenance" || item.status === "failure")
     .slice(0, 5);
+
+  const sitesWithConnectionIssuesIds = new Set(
+    connections
+      .filter((connection) => connection.status === "failure" || connection.status === "degraded" || connection.status === "maintenance")
+      .map((connection) => connection.site_id)
+      .filter(Boolean)
+  );
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
   
+  // Filtrez les contacts en fonction du filtre actif
+  const filteredContacts = siteContacts
+  .filter(contact => {
+    // Filtrer par sites avec problèmes si nécessaire
+    if (!showAllContacts) {
+      const siteId = sites.find(site => site.name === contact.site)?.id;
+      if (!siteId || !sitesWithConnectionIssuesIds.has(siteId)) {
+        return false;
+      }
+    }
+    
+    // Filtrer par terme de recherche
+    if (searchTerm.trim() !== "") {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        contact.name.toLowerCase().includes(searchLower) ||
+        contact.phone.toLowerCase().includes(searchLower) ||
+        contact.site.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return true;
+  });
+
   if (loading) {
     return <DashboardSkeleton />;
   }
@@ -296,9 +334,37 @@ const Dashboard = () => {
       </Card>
       
       <Card className="dashboard-table">
-        <CardHeader>
+      <CardHeader>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <CardTitle>Contacts</CardTitle>
-        </CardHeader>
+          <div className="flex flex-col sm:flex-row gap-4 items-center">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Rechercher..."
+                value={searchTerm}
+                onChange={handleSearch}
+                className="px-3 py-1 pr-8 border rounded-md text-sm w-full"
+              />
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400">
+                🔍
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input 
+                type="checkbox" 
+                id="allSitesFilter" 
+                checked={showAllContacts}
+                onChange={() => setShowAllContacts(!showAllContacts)}
+                className="w-4 h-4"
+              />
+              <label htmlFor="issueFilter" className="text-sm whitespace-nowrap">
+                Afficher tous les sites
+              </label>
+            </div>
+          </div>
+        </div>
+      </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
@@ -309,8 +375,8 @@ const Dashboard = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {siteContacts.length > 0 ? (
-                siteContacts.map((contact, index) => (
+              {filteredContacts.length > 0 ? (
+                (showAllContacts ? filteredContacts : filteredContacts.slice(0, 5)).map((contact, index) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">{contact.name}</TableCell>
                     <TableCell>{contact.phone}</TableCell>
@@ -320,12 +386,27 @@ const Dashboard = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={3} className="h-24 text-center">
-                    Aucun contact trouvé.
+                    {showOnlyIssueContacts 
+                      ? "Aucun contact pour les sites avec problèmes." 
+                      : "Aucun contact trouvé."}
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
+          {filteredContacts.length > 5 && (
+            <div className="text-center mt-2">
+              <button 
+                className="px-3 py-1 text-sm border rounded-md hover:bg-gray-100"
+                onClick={() => setShowAllContacts(!showAllContacts)}
+              >
+                {showAllContacts 
+                  ? "Afficher moins" 
+                  : `Voir tous les contacts (${filteredContacts.length})`
+                }
+              </button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
