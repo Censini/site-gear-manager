@@ -10,7 +10,8 @@ import {
   Upload, 
   Download,
   Settings,
-  User
+  User,
+  Shield
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -20,6 +21,7 @@ const sidebarItems = [
   { name: "Sites", path: "/sites", icon: Building },
   { name: "Liens Internet", path: "/connections", icon: Network },
   { name: "IPAM", path: "/ipam", icon: Wifi },
+  { name: "Firewall", path: "/firewall", icon: Shield },
   { name: "Import", path: "/import", icon: Upload },
   { name: "Export", path: "/export", icon: Download },
   { name: "Paramètres", path: "/settings", icon: Settings },

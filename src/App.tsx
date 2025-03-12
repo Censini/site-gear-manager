@@ -23,6 +23,7 @@ import EditIPRange from "./pages/EditIPRange";
 import Import from "./pages/Import";
 import Export from "./pages/Export";
 import Settings from "./pages/Settings";
+import Firewall from "./pages/Firewall";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -117,6 +118,11 @@ function App() {
                   <Route path="/ipam/edit/:id" element={
                     <MainLayout>
                       <EditIPRange />
+                    </MainLayout>
+                  } />
+                  <Route path="/firewall" element={
+                    <MainLayout>
+                      <Firewall />
                     </MainLayout>
                   } />
                   <Route path="/import" element={
